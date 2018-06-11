@@ -32,13 +32,13 @@ void init_adc(void){
 
   // Set up LEDs as output and set to low
   for (i = 0; i < 4; i++){
-    set_dir_a(SENSOR_PCB, i, 0);
-    clear_gpio_a(SENSOR_PCB, i);
+    pex_set_dir_a(i, 0);
+    pex_set_gpio_a_low(i);
   }
   // Set ITF and ADC CS as output and set to high
   for (i = 0; i < 2; i++){
-    set_gpio_b(SENSOR_PCB, i);
-    set_dir_b(SENSOR_PCB, i, 0);
+    pex_set_gpio_b_high(i);
+    pex_set_dir_b(i, 0);
     //set_gpio_b(SENSOR_PCB, i);
   }
 
@@ -55,12 +55,12 @@ void adc_pex_hard_rst(void){
   // BUG:  Current issue, it will reset all connected port expanders
   //        Make it not do this.
 
-  reset_pex();
+  pex_reset();
 
   // BUG: Port expandes reset to address 000 on reset.
   //      To write to them, need to write to 000
   //      This is the address of the SSM PEX. Therefore need to change SSM PEX hardware address
-  port_expander_write(0x00, IOCON, IOCON_DEFAULT);
+  pex_write(PEX_IOCON, PEX_IOCON_DEFAULT);
   init_adc();
 }
 
@@ -68,7 +68,7 @@ void adc_pex_hard_rst(void){
 uint32_t read_ADC_register(uint8_t register_addr) {
   // Read the current state of the specified ADC register.
 
-  clear_gpio_b(SENSOR_PCB, ADC_CS);
+  pex_set_gpio_b_low(ADC_CS);
   send_spi(COMM_BYTE_READ_SINGLE | (register_addr << 3));
 
   // Read the required number of bytes based on register
@@ -90,7 +90,7 @@ uint32_t read_ADC_register(uint8_t register_addr) {
 void write_ADC_register(uint8_t register_addr, uint32_t data) {
   // Writes a new state to the specified ADC register.
 
-  clear_gpio_b(SENSOR_PCB, ADC_CS);
+  pex_set_gpio_b_low(ADC_CS);
   send_spi(COMM_BYTE_WRITE | (register_addr << 3));
 
   // Write the number of bytes in the register
