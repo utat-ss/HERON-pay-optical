@@ -19,7 +19,7 @@ SRC = $(wildcard ./src/*.c)
 OBJ = $(SRC:./src/%.c=./build/%.o)
 DEP = $(OBJ:.o=.d)
 
-pay: $(OBJ)
+pay_optical: $(OBJ)
 	$(CC) $(CFLAGS) -o ./build/$@.elf $(OBJ) $(LIB)
 	avr-objcopy -j .text -j .data -O ihex ./build/$@.elf ./build/$@.hex
 
@@ -36,8 +36,10 @@ pay: $(OBJ)
 clean:
 	rm -f $(OBJ)
 	rm -f $(DEP)
+	rm -f ./build/obc.hex
+	rm -f ./build/obc.elf
 
-upload: pay
+upload: pay_optical
 	avrdude -c $(PROG) -p $(MCU) -P $(PORT) -U flash:w:./build/$^.hex
 
 debug:

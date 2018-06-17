@@ -26,6 +26,21 @@ ISR(SPI_STC_vect) {
     print("SPI serial transfer complete\n");
 }
 
+void setup_adc(void) {
+    // TODO
+    // init_port_expander();
+    // init_adc();
+    // print("ADC Setup Completed\n");
+    //
+    // adc_optical_write_register(CONFIG_ADDR, CONFIG_DEFAULT);
+    // uint32_t config_data = read_ADC_register(CONFIG_ADDR);
+    // print("ADC Configuration Register: %lX\n", config_data);
+    //
+    // int pga_gain = 1;
+    // set_PGA(pga_gain);
+    // print("PGA gain: %d\n", pga_gain);
+}
+
 // TODO - place SPI data in SPDR beforehand
 // maybe 1 for data ready, 0 for not ready?
 int main(void) {
