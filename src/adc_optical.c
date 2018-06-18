@@ -181,20 +181,6 @@ uint32_t adc_optical_read_raw_data(uint8_t channel_num, uint8_t gain) {
 }
 
 
-double adc_optical_convert_raw_data_to_voltage(uint32_t raw_data, uint8_t gain) {
-    // Convert a raw 24 bit measurement to the input voltage (in V) for the specified
-    // ADC channel, including applying the gain factor.
-
-    // (p.31) Code = (2^N * AIN * Gain) / (V_REF)
-    //     => AIN = (Code * V_REF) / (2^N * Gain)
-    double num = ((double) raw_data) * V_REF;
-    double denom = (((uint32_t) 1) << N) * gain;
-    double AIN = num / denom;
-
-    return AIN;
-}
-
-
 uint8_t adc_optical_num_register_bytes(uint8_t register_addr) {
     // Returns the number of BYTES in the specified register at the given address
 

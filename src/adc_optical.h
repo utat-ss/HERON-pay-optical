@@ -53,10 +53,6 @@ TODO - check configuration register bits:
 
 
 
-// For ADC read conversion (p.31)
-#define N 24      // number of bits read
-#define V_REF 2.5 // reference voltage
-
 // Mode select bits for continuous conversion or calibration (p. 21-23, 37)
 #define CONT_CONV             0x0
 #define INT_ZERO_SCALE_CALIB  0x4
@@ -79,7 +75,6 @@ void adc_optical_select_pga(uint8_t gain);
 void adc_optical_select_operating_mode(uint32_t mode_bits);
 
 uint32_t adc_optical_read_raw_data(uint8_t channel_num, uint8_t gain);
-double adc_optical_convert_raw_data_to_voltage(uint32_t raw_data, uint8_t gain);
 
 uint8_t adc_optical_num_register_bytes(uint8_t register_addr);
 uint8_t adc_optical_convert_gain_to_gain_bits(uint8_t gain);
