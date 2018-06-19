@@ -79,4 +79,7 @@ uint32_t adc_optical_read_raw_data(uint8_t channel_num, uint8_t gain);
 uint8_t adc_optical_num_register_bytes(uint8_t register_addr);
 uint8_t adc_optical_convert_gain_to_gain_bits(uint8_t gain);
 
+void adc_optical_enable_mux(uint8_t channel);
+void adc_optical_disable_mux(void);
+
 #endif

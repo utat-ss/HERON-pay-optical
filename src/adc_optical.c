@@ -170,7 +170,6 @@ uint32_t adc_optical_read_raw_data(uint8_t channel_num, uint8_t gain) {
     adc_optical_select_operating_mode(MODE_SINGLE_CONV);
 
     // Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
-    // TODO: add a timeout
     uint16_t timeout = 1023;
     while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
@@ -244,6 +243,26 @@ uint8_t adc_optical_convert_gain_to_gain_bits(uint8_t gain) {
             return 0b000;
             break;
     }
+}
+
+
+// channel - channel to select (between 1 and 8 to represent S1-S8)
+void adc_optical_enable_mux(uint8_t channel) {
+    uint8_t channel_bits = channel - 1;
+
+    // Set _EN_ (bit 3) = 0, bits 2-0 = channel
+    uint8_t gpocon = adc_optical_read_register(GPOCON_ADDR);
+    gpocon = gpocon & 0xF0;
+    gpocon = gpocon | channel_bits;
+    adc_optical_write_register(GPOCON_ADDR, gpocon);
+}
+
+
+void adc_optical_disable_mux(void) {
+    // Set _EN_ (bit 3) = 1
+    uint8_t gpocon = adc_optical_read_register(GPOCON_ADDR);
+    gpocon = gpocon | _BV(3);
+    adc_optical_write_register(GPOCON_ADDR, gpocon);
 }
 
 
