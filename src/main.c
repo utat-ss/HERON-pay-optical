@@ -2,13 +2,12 @@
 
 uint32_t spi_tx_data = 0;
 bool spi_tx_data_in_progress = false;
-uint8_t spi_tx_data_num_bytes_received = 0; // number of bytes already received by PAY
+uint8_t spi_tx_data_num_bytes_transmitted = 0; // number of bytes already received by PAY
 
 
 // Interrupts - see datasheet section 8
 // SPI - see datasheet pg.133-...
 
-// TODO - is this necessary? just interrupt?
 void spi_slave_init(void) {
     /* Set MISO output, all others input */
     DDR_SPI = (1<<DD_MISO);
@@ -16,6 +15,7 @@ void spi_slave_init(void) {
     SPCR = (1<<SPE);
 }
 
+// TODO - is this necessary? just interrupt?
 uint8_t spi_slave_receive(void) {
     /* Wait for reception complete */
     // TODO add timeout
@@ -40,9 +40,9 @@ ISR(SPI_STC_vect) {
     SPDR = 0x00;
 
     if (spi_tx_data_in_progress) {
-        spi_tx_data_num_bytes_received++;
+        spi_tx_data_num_bytes_transmitted++;
 
-        switch (spi_tx_data_num_bytes_received) {
+        switch (spi_tx_data_num_bytes_transmitted) {
             case 1:
                 SPDR = (spi_tx_data >> 8) & 0xFF;
                 set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
@@ -54,10 +54,10 @@ ISR(SPI_STC_vect) {
             case 3:
                 spi_tx_data = 0;
                 spi_tx_data_in_progress = false;
-                spi_tx_data_num_bytes_received = 0;
+                spi_tx_data_num_bytes_transmitted = 0;
                 break;
             default:
-                print("Unexpected value of spi_tx_data_num_bytes_received: %u\n", spi_tx_data_num_bytes_received);
+                print("Unexpected value of spi_tx_data_num_bytes_received: %u\n", spi_tx_data_num_bytes_transmitted);
                 break;
         }
     }
@@ -110,7 +110,7 @@ void read_sensor_command(uint8_t field_number) {
     spi_tx_data = adc_optical_read_raw_data(adc_channel, 1);
     adc_optical_disable_mux();
     SPDR = (spi_tx_data >> 16) & 0xFF;
-    spi_tx_data_num_bytes_received = 0;
+    spi_tx_data_num_bytes_transmitted = 0;
     spi_tx_data_in_progress = true;
 
     // Set DATA_RDY high
@@ -118,8 +118,6 @@ void read_sensor_command(uint8_t field_number) {
 }
 
 
-// TODO - place SPI data in SPDR beforehand
-// maybe 1 for data ready, 0 for not ready?
 int main(void) {
     init_uart();
     print("UART Initialized\n");
@@ -133,4 +131,6 @@ int main(void) {
     init_cs(DATA_RDY_PIN, &DATA_RDY_DDR);
     set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);
     print("DATA_RDY Initialized\n");
+
+    while (1) {}
 }
