@@ -268,6 +268,49 @@ void adc_optical_disable_mux(void) {
 
 
 
+uint32_t adc_optical_read_raw_data_field_number(uint8_t field_number) {
+    uint8_t group = field_number / 8;
+    uint8_t address = field_number % 8;
+
+    // Enable the mux for the appropriate address
+    // (this should turn on the LED and enable the amplifier)
+    adc_optical_enable_mux(address + 1);
+
+    // TODO - set up and configure synchronous demodulator
+
+    uint8_t adc_channel;
+    switch (group) {
+        case 0:
+            adc_channel = 5;
+            break;
+        case 1:
+            adc_channel = 7;
+            break;
+        case 2:
+            adc_channel = 9;
+            break;
+        case 3:
+            adc_channel = 11;
+            break;
+        case 4:
+            adc_channel = 13;
+            break;
+        default:
+            print("Unexpected sensor group\n");
+            adc_channel = 5;
+            break;
+    }
+
+    // Read ADC data and prepare to send it over SPI
+    uint32_t raw_data = adc_optical_read_raw_data(adc_channel, 1);
+    adc_optical_disable_mux();
+
+    return raw_data;
+}
+
+
+
+
 // TODO
 /*
     // Calibrate the ADC and re-enable continuous conversion mode

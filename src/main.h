@@ -14,6 +14,6 @@
 
 void spi_slave_init(void);
 uint8_t spi_slave_receive(void);
-void read_sensor_command(uint8_t field_number);
+void spi_slave_command(uint8_t field_number);
 
 #endif

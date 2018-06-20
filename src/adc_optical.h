@@ -2,6 +2,7 @@
 #define ADC_OPTICAL_H
 
 #include <spi/spi.h>
+#include <uart/uart.h>
 #include <stdint.h>
 
 
@@ -81,5 +82,7 @@ uint8_t adc_optical_convert_gain_to_gain_bits(uint8_t gain);
 
 void adc_optical_enable_mux(uint8_t channel);
 void adc_optical_disable_mux(void);
+
+uint32_t adc_optical_read_raw_data_field_number(uint8_t field_number);
 
 #endif
