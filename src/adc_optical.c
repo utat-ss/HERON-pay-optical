@@ -275,7 +275,7 @@ uint32_t adc_optical_read_raw_data_field_number(uint8_t field_number) {
     // Enable the mux for the appropriate address
     // (this should turn on the LED and enable the amplifier)
     adc_optical_enable_mux(address + 1);
-
+    _delay_ms(100);
     // TODO - set up and configure synchronous demodulator
 
     uint8_t adc_channel;

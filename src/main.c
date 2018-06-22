@@ -2,7 +2,7 @@
 
 uint32_t spi_tx_data = 0;
 bool spi_tx_data_in_progress = false;
-uint8_t spi_tx_data_num_bytes_transmitted = 0; // number of bytes already received by PAY
+uint8_t spi_tx_data_num_bytes_done = 0; // number of bytes already received by PAY
 
 
 // Interrupts - see datasheet section 8
@@ -27,11 +27,11 @@ uint8_t spi_slave_receive(void) {
 
 
 // field_number - a number from 0 to 32 (well number)
-void spi_slave_command(uint8_t field_number) {
+void start_read_optical_command(uint8_t field_number) {
     spi_tx_data = adc_optical_read_raw_data_field_number(field_number);
 
     SPDR = (spi_tx_data >> 16) & 0xFF;
-    spi_tx_data_num_bytes_transmitted = 0;
+    spi_tx_data_num_bytes_done = 0;
     spi_tx_data_in_progress = true;
 
     // Set DATA_RDY high
@@ -49,13 +49,13 @@ PAY will send a byte over SPI: {2'b11, field_number}
 ISR(SPI_STC_vect) {
     print("Interrupt - SPI serial transfer complete\n");
     uint8_t received = SPDR;
-    print("Received byte: 0x%02x\n", received);
+    print("Received byte: 0x%2x\n", received);
     SPDR = 0x00;
 
     if (spi_tx_data_in_progress) {
-        spi_tx_data_num_bytes_transmitted++;
+        spi_tx_data_num_bytes_done++;
 
-        switch (spi_tx_data_num_bytes_transmitted) {
+        switch (spi_tx_data_num_bytes_done) {
             case 1:
                 SPDR = (spi_tx_data >> 8) & 0xFF;
                 set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
@@ -65,12 +65,12 @@ ISR(SPI_STC_vect) {
                 set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
                 break;
             case 3:
-                spi_tx_data = 0;
                 spi_tx_data_in_progress = false;
-                spi_tx_data_num_bytes_transmitted = 0;
+                spi_tx_data = 0;
+                spi_tx_data_num_bytes_done = 0;
                 break;
             default:
-                print("Unexpected value of spi_tx_data_num_bytes_transmitted: %u\n", spi_tx_data_num_bytes_transmitted);
+                print("Unexpected num_bytes_done: %u\n", spi_tx_data_num_bytes_done);
                 break;
         }
     }
@@ -79,7 +79,7 @@ ISR(SPI_STC_vect) {
         // Check if the first 2 bits are 1's
         if (((received >> 6) & 0b11) == 0b11) {
             uint8_t field_number = received & 0x3F;
-            spi_slave_command(field_number);
+            start_read_optical_command(field_number);
         }
     }
 }
@@ -90,10 +90,10 @@ int main(void) {
     print("UART Initialized\n");
 
     adc_optical_init();
-    print("ADC Initialized\n");
+    print("Optical ADC Initialized\n");
 
     spi_slave_init();
-    print("SPI Initialized\n");
+    print("SPI Slave Initialized\n");
 
     init_cs(DATA_RDY_PIN, &DATA_RDY_DDR);
     set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);

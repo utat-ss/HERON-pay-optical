@@ -1,9 +1,14 @@
 #ifndef ADC_OPTICAL_H
 #define ADC_OPTICAL_H
 
+#ifndef F_CPU
+#define F_CPU 8000000L
+#endif
+
 #include <spi/spi.h>
 #include <uart/uart.h>
 #include <stdint.h>
+#include <util/delay.h>
 
 
 
