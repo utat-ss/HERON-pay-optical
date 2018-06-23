@@ -49,7 +49,7 @@ PAY will send a byte over SPI: {2'b11, field_number}
 ISR(SPI_STC_vect) {
     print("Interrupt - SPI serial transfer complete\n");
     uint8_t received = SPDR;
-    print("Received byte: 0x%2x\n", received);
+    print("Received byte: 0x%02x\n", received);
     SPDR = 0x00;
 
     if (spi_tx_data_in_progress) {
