@@ -28,7 +28,7 @@ uint8_t spi_slave_receive(void) {
 
 // field_number - a number from 0 to 32 (well number)
 void start_read_optical_command(uint8_t field_number) {
-    spi_tx_data = adc_optical_read_raw_data_field_number(field_number);
+    spi_tx_data = opt_adc_read_field_raw_data(field_number);
 
     SPDR = (spi_tx_data >> 16) & 0xFF;
     spi_tx_data_num_bytes_done = 0;
@@ -89,7 +89,7 @@ int main(void) {
     init_uart();
     print("UART Initialized\n");
 
-    adc_optical_init();
+    opt_adc_init();
     print("Optical ADC Initialized\n");
 
     spi_slave_init();

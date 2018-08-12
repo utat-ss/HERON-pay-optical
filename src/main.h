@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <uart/uart.h>
-#include "adc_optical.h"
+#include "optical_adc.h"
 
 #define DDR_SPI DDRB
 #define DD_MISO DDB0

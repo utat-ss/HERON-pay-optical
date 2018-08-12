@@ -1,5 +1,5 @@
-#ifndef ADC_OPTICAL_H
-#define ADC_OPTICAL_H
+#ifndef OPTICAL_ADC_H
+#define OPTICAL_ADC_H
 
 #ifndef F_CPU
 #define F_CPU 8000000L
@@ -13,9 +13,9 @@
 
 
 
-#define ADC_OPTICAL_CS_PIN  PB6
-#define ADC_OPTICAL_CS_PORT PORTB
-#define ADC_OPTICAL_CS_DDR  DDRB
+#define CS_PIN  PB6
+#define CS_PORT PORTB
+#define CS_DDR  DDRB
 
 #define MISO_PIN    PB0
 #define MISO_PORT   PORTB
@@ -69,25 +69,25 @@ TODO - check configuration register bits:
 
 
 
-void adc_optical_init(void);
-void adc_optical_init_config(void);
-void adc_optical_init_mode(void);
+void opt_adc_init(void);
+void opt_adc_init_config(void);
+void opt_adc_init_mode(void);
 
-uint32_t adc_optical_read_register(uint8_t register_addr);
-void adc_optical_write_register(uint8_t register_addr, uint32_t data);
+uint32_t opt_adc_read_reg(uint8_t register_addr);
+void opt_adc_write_reg(uint8_t register_addr, uint32_t data);
 
-void adc_optical_select_channel(uint8_t channel_num);
-void adc_optical_select_pga(uint8_t gain);
-void adc_optical_select_operating_mode(uint32_t mode_bits);
+void opt_adc_select_channel(uint8_t channel_num);
+void opt_adc_select_pga(uint8_t gain);
+void opt_adc_select_op_mode(uint32_t mode_bits);
 
-uint32_t adc_optical_read_raw_data(uint8_t channel_num, uint8_t gain);
+uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 
-uint8_t adc_optical_num_register_bytes(uint8_t register_addr);
-uint8_t adc_optical_convert_gain_to_gain_bits(uint8_t gain);
+uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
+uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 
-void adc_optical_enable_mux(uint8_t channel);
-void adc_optical_disable_mux(void);
+void opt_adc_enable_mux(uint8_t channel);
+void opt_adc_disable_mux(void);
 
-uint32_t adc_optical_read_raw_data_field_number(uint8_t field_number);
+uint32_t opt_adc_read_field_raw_data(uint8_t field_number);
 
 #endif
