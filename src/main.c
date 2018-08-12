@@ -1,4 +1,6 @@
-#include "main.h"
+#include <uart/uart.h>
+#include "optical_adc.h"
+#include "optical_spi.h"
 
 int main(void) {
     init_uart();
@@ -7,7 +9,7 @@ int main(void) {
     opt_adc_init();
     print("Optical ADC Initialized\n");
 
-    spi_slave_init();
+    opt_spi_init();
     print("SPI Slave Initialized\n");
 
     init_cs(DATA_RDY_PIN, &DATA_RDY_DDR);

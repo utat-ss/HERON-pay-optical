@@ -12,8 +12,7 @@
 #define DATA_RDY_PORT   PORTD
 #define DATA_RDY_DDR    DDRD
 
-void spi_slave_init(void);
-uint8_t spi_slave_receive(void);
-void start_read_optical_command(uint8_t field_number);
+void opt_spi_init(void);
+uint8_t opt_spi_receive(void);
 
 #endif
