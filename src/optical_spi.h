@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef OPTICAL_SPI_H
+#define OPTICAL_SPI_H
 
 #include <stdbool.h>
 #include <uart/uart.h>
