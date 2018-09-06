@@ -18,7 +18,7 @@
 #define SD_ANALOG_CONFIG_ADDR       0x0028
 #define SD_SYNC_CONTROL_ADDR        0x0029
 #define SD_DEMOD_CONTROL_ADDR       0x002A
-#define SD_CLK_CONFIG_ADDR         0x002B
+#define SD_CLK_CONFIG_ADDR          0x002B
 #define SD_DIGITAL_CONFIG_ADDR      0x002C
 #define SD_CORE_RESET_ADDR          0x002D
 
@@ -42,6 +42,6 @@ void syncdemod_disable_external_clk(uint8_t sd_cs_pin);
 void syncdemod_enable_rclk(void);
 void syncdemod_disable_rclk(void);
 void syncdemod_reset(void);
-void syncdemod_toggle_reset(uint8_t sd_cs_pin);
+void syncdemod_toggle_core_reset(uint8_t sd_cs_pin);
 
 #endif

@@ -146,17 +146,14 @@ void syncdemod_reset(uint8_t sd_cs_pin){
     syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, command);
 }
 
-void syncdemod_toggle_reset(uint8_t sd_cs_pin){
+void syncdemod_toggle_core_reset(uint8_t sd_cs_pin){
     // if reset_state == 0, device is not reset, and vice-versa
     static uint8_t reset_state = 0x00;
-    uint8_t command;
     switch (reset_state){
         case 0x00:
             reset_state = 0x01;
-            command = SD_SERIAL_CONFIG_DEFAULT | (0b10000001);
         case 0x01:
             reset_state = 0x00;
-            command = SD_SERIAL_CONFIG_DEFAULT;
     }
-    syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, command);
+    syncdemod_write_register(sd_cs_pin, SD_CORE_RESET_ADDR, reset_state);
 }
