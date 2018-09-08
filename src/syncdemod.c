@@ -11,7 +11,7 @@
 
 #include "syncdemod.h"
 
-void syncdemod_init(void){
+void syncdemod_init() {
     uint8_t sd_cs_pin;
     // SD CS's are PC3 to PC6
     for (int i = 0; i < 4; i++){
@@ -66,11 +66,10 @@ void syncdemod_set_filters(uint8_t sd_cs_pin, uint8_t* config_arr){
     // Write the filter coefficients
     syncdemod_write_multibyte(sd_cs_pin, SD_FILTER_CONFIG_BASE_ADDR, 23, config_arr);
     // Get the filters set
-    syncdemod_write_register(sd_cs_pin, SD_FILTER_STROBE, command);
+    syncdemod_write_register(sd_cs_pin, SD_FILTER_STROBE_ADDR, command);
     // write 0x00 to reset the strobe register (might not be needed?)
     command = 0x00;
-    syncdemod_write_register(sd_cs_pin, SD_FILTER_STROBE, command);
-
+    syncdemod_write_register(sd_cs_pin, SD_FILTER_STROBE_ADDR, command);
 }
 
 void syncdemod_set_clock(uint8_t sd_cs_pin, int clkin_div, uint8_t rclk_div){
@@ -108,19 +107,20 @@ void syncdemod_write_synco(uint8_t sd_cs_pin, uint8_t enable, uint8_t polarity, 
     // bit 5 is synco enable (active high)
     // bit 4 is polarity (default == 0)
     // bit[3:0] is edge selection for the synco output (default == 1101)
-    command = ((0x01 & enable) << 5) | ((0x01 & polarity) << 4) | (0x0F edge)
+    uint16_t command = ((0x01 & enable) << 5) | ((0x01 & polarity) << 4) | (0x0F & edge);
+    syncdemod_write_register(sd_cs_pin, SD_SYNC_CONTROL_ADDR, command);
 }
 
 void syncdemod_enable_external_clk(uint8_t sd_cs_pin){
     // enables CMOS level clock on the CLKIN pin
     uint16_t command = 0x01;
-    syncdemod_write_register(sd_cs_pin, SD_ANALOG_CONFIG_ADDR, command)
+    syncdemod_write_register(sd_cs_pin, SD_ANALOG_CONFIG_ADDR, command);
 }
 
 void syncdemod_disable_external_clk(uint8_t sd_cs_pin){
     // disables the CMOS level clock and enables the external crystal
     uint16_t command = 0x00;
-    syncdemod_write_register(sd_cs_pin, SD_ANALOG_CONFIG_ADDR, command)
+    syncdemod_write_register(sd_cs_pin, SD_ANALOG_CONFIG_ADDR, command);
 }
 
 void syncdemod_enable_rclk(uint8_t sd_cs_pin){

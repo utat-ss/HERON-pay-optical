@@ -5,6 +5,12 @@
 #include <stdint.h>
 #include <spi/spi.h>
 
+#ifndef F_CPU
+#define F_CPU 8000000
+#endif
+
+#include <util/delay.h>
+
 #define SD_CS_PORT  PORTC
 #define SD_CS_DDR   DDRC
 #define SD1_CS_PIN  PC3
@@ -31,17 +37,17 @@
 // bit[2:0] == 000 sets VOCM to VDD/2 low power mode
 #define SD_DEMOD_CONTROL_DEFAULT    0x18
 
-void syncdemod_init(void);
-void syncdemod_write_register(uint16_t addr, uint8_t data);
+void syncdemod_init();
+void syncdemod_write_register(uint8_t sd_cs_pin, uint16_t addr, uint8_t data);
 void syncdemod_write_multibyte(uint8_t sd_cs_pin, uint16_t addr, uint8_t len, uint8_t* data);
 void syncdemod_set_filters(uint8_t sd_cs_pin, uint8_t* config_arr);
 void syncdemod_set_clock(uint8_t sd_cs_pin, int clkin_div, uint8_t rclk_div);
 void syncdemod_write_synco(uint8_t sd_cs_pin, uint8_t enable, uint8_t polarity, uint8_t edge);
 void syncdemod_enable_external_clk(uint8_t sd_cs_pin);
 void syncdemod_disable_external_clk(uint8_t sd_cs_pin);
-void syncdemod_enable_rclk(void);
-void syncdemod_disable_rclk(void);
-void syncdemod_reset(void);
+void syncdemod_enable_rclk(uint8_t sd_cs_pin);
+void syncdemod_disable_rclk(uint8_t sd_cs_pin);
+void syncdemod_reset(uint8_t sd_cs_pin);
 void syncdemod_toggle_core_reset(uint8_t sd_cs_pin);
 
 #endif
