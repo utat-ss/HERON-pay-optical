@@ -1,8 +1,13 @@
-#include "../../src/optical_spi.c"
+#include "../../src/optical_spi.h"
 #include <util/delay.h>
 #include <uart/uart.h>
 
 int main(void) {
+	// DO NOT INITIALIZE UART - it interferes with the SPI slave functionality
+
+	// Use dummy data instead of actual ADC data for testing
+	opt_spi_use_dummy_data = true;
+
 	opt_spi_init();
 
 	while (1) {

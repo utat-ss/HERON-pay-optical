@@ -1,4 +1,4 @@
 PROG = optical_spi_test
 # SRC should only include necessary files
-SRD = $(addprefix ../../src/optical_spi.c)
+SRC = $(addprefix ../../src/,optical_spi.c optical_adc.c)
 include ../makefile
