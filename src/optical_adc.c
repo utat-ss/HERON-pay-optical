@@ -2,6 +2,8 @@
 DESCRIPTION: AD7194 ADC functions
 AUTHORS: Bruno Almeida, Dylan Vogel
 
+Datasheet: http://www.analog.com/media/en/technical-documentation/data-sheets/AD7194.pdf
+
 This is referred to as the "optical ADC", which is different from the primary
 ADC library in lib-common.
 
@@ -15,6 +17,28 @@ TODO:
 */
 
 #include "optical_adc.h"
+
+
+void opt_adc_init_config(void);
+void opt_adc_init_mode(void);
+
+uint32_t opt_adc_read_reg(uint8_t register_addr);
+void opt_adc_write_reg(uint8_t register_addr, uint32_t data);
+
+void opt_adc_select_channel(uint8_t channel_num);
+void opt_adc_select_pga(uint8_t gain);
+void opt_adc_select_op_mode(uint32_t mode_bits);
+
+uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
+
+void opt_adc_enable_mux(uint8_t channel);
+void opt_adc_disable_mux(void);
+
+uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
+uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
+
+
+
 
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
@@ -73,17 +97,22 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
 
     // Begin communication with a write to the communications register
     // Request a read from the specified register
-    send_spi(COMM_READ | (register_addr << 3));
+    uint8_t spi_tx = COMM_READ | (register_addr << 3);
+    send_spi(spi_tx);
+    print("Read register request: %02X\n", spi_tx);
 
     // Read the required number of bytes based on register
     uint32_t data = 0;
     for (uint8_t i = 0; i < opt_adc_num_reg_bytes(register_addr); i++) {
-        data = data << 8;
-        data = data | send_spi(0x00);
+        uint8_t next_byte = send_spi(0x00);
+        print("Received byte: %02X\n", next_byte);
+        data = (data << 8) | next_byte;
     }
 
     // Stop communication
     set_cs_high(CS_PIN, &CS_PORT);
+
+    print("Read register data: %06X\n", data);
 
     return data;
 }
@@ -99,11 +128,17 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
 
     // Begin communication with a write to the communications register
     // Request a write to the specified register
-    send_spi(COMM_WRITE | (register_addr << 3));
+    uint8_t spi_tx = COMM_WRITE | (register_addr << 3);
+    send_spi(spi_tx);
+    print("Write register request: %02X\n", spi_tx);
+
+    print("Write register data: %06X\n", data);
 
     // Write the number of bytes in the register
     for (int8_t i = opt_adc_num_reg_bytes(register_addr) - 1; i >= 0; i--) {
-        send_spi( (uint8_t) (data >> (i * 8)) );
+        uint8_t next_byte = data >> (i * 8);
+        send_spi(next_byte);
+        print("Sent byte: %02X\n", next_byte);
     }
 
     // Set CS high
