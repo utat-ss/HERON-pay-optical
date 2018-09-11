@@ -30,6 +30,7 @@
 
 // No reset, MSB first, addr increment, 3-wire SPI
 #define SD_SERIAL_CONFIG_DEFAULT    0x00
+
 // bit 6 is phase of RCLK, bit 4 is mixer enable, bit 3 is SDO/RCLK routing, bit[2:0] is VOCM config
 // bit 6 == 1 delays phase of RCLK
 // bit 4 == 1 holds the last sample while RCLK inactive

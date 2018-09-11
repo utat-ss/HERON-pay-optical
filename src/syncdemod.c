@@ -136,6 +136,11 @@ void syncdemod_disable_rclk(uint8_t sd_cs_pin){
 }
 
 void syncdemod_reset(uint8_t sd_cs_pin){
+    // Resets the specified device
+    uint16_t command;
+    // Setting bit 7 and bit 0 to 1 resets the device
+    command = SD_SERIAL_CONFIG_DEFAULT | (0b10000001);
+    syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, command);
     _delay_ms(1);
     command = SD_SERIAL_CONFIG_DEFAULT;
     syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, command);
