@@ -3,6 +3,7 @@ DESCRIPTION: AD7194 ADC functions
 AUTHORS: Bruno Almeida, Dylan Vogel
 
 Datasheet: http://www.analog.com/media/en/technical-documentation/data-sheets/AD7194.pdf
+FAQ: http://www.analog.com/media/en/technical-documentation/frequently-asked-questions/AD719x_FAQ_Instru_Conv.pdf
 
 This is referred to as the "optical ADC", which is different from the primary
 ADC library in lib-common.
@@ -24,8 +25,7 @@ void opt_adc_init_mode(void);
 
 void opt_adc_select_channel(uint8_t channel_num);
 void opt_adc_select_pga(uint8_t gain);
-void opt_adc_select_op_mode(uint32_t mode_bits);
-
+void opt_adc_select_op_mode(uint8_t mode_bits);
 
 void opt_adc_enable_mux(uint8_t channel);
 void opt_adc_disable_mux(void);
@@ -49,6 +49,7 @@ void opt_adc_init(void){
 
     // GPOCON register - enable 4 GPIO outputs
     // _EN_ = 1, A2/A1/A0 = 0
+    // TODO - make a constant?
     opt_adc_write_reg(GPOCON_ADDR, 0b00111000);
 
     opt_adc_init_config();
@@ -157,9 +158,9 @@ void opt_adc_select_channel(uint8_t channel_num) {
 
     // Mask the channel bits and write new channel
     config &= 0xffff00ff;
-    config |= (channel_bits << 8);
+    config |= ((uint32_t) channel_bits) << 8;
 
-    // Write modified config register
+    // Write the new config register value
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
 
@@ -184,13 +185,13 @@ void opt_adc_select_pga(uint8_t gain) {
 
 
 // Selects the operating mode
-void opt_adc_select_op_mode(uint32_t mode_bits) {
+void opt_adc_select_op_mode(uint8_t mode_bits) {
     // Read from mode register
     uint32_t mode_reg = opt_adc_read_reg(MODE_ADDR);
 
     // Clear mode bits and set
     mode_reg &= 0x1fffff;
-    mode_reg |= mode_bits;
+    mode_reg |= ((uint32_t) mode_bits) << 21;
 
     // Write to configuration register
     opt_adc_write_reg(MODE_ADDR, mode_reg);
@@ -210,13 +211,27 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     opt_adc_select_pga(gain);
     opt_adc_select_op_mode(MODE_SINGLE_CONV);
 
+    // p.23 - "The internal clock requires 200 μs typically to power up and settle."
+    // TODO - check delay time - is it necessary?
+    _delay_us(200);
+
+    /*
+    FAQ p.10
+    "the user can take CS low, initiate the single conversion and then take CS high again...
+    When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
+    */
     // Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
-    uint16_t timeout = 1023;
+    // Must set _CS_ low first for this to work
+    set_cs_low(CS_PIN, &CS_PORT);
+    // TODO - change timeout
+    uint16_t timeout = 65535;
     while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
     }
     if (timeout == 0) {
         print("ERROR: TIMEOUT\n");
+    } else {
+        print("Conversion successful\n");
     }
 
     // Read back the conversion result
@@ -352,6 +367,33 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
 
     return raw_data;
 }
+
+
+// Reads the prints out the values of all registers
+// TODO - comment out this function so the constant strings don't waste memory
+void opt_adc_read_all_regs(void) {
+    uint32_t status = opt_adc_read_reg(STATUS_ADDR);
+    uint32_t mode = opt_adc_read_reg(MODE_ADDR);
+    uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
+    uint32_t data = opt_adc_read_reg(DATA_ADDR);
+    uint32_t id = opt_adc_read_reg(ID_ADDR);
+    uint32_t gpocon = opt_adc_read_reg(GPOCON_ADDR);
+    uint32_t offset = opt_adc_read_reg(OFFSET_ADDR);
+    uint32_t full_scale = opt_adc_read_reg(FULL_SCALE_ADDR);
+
+    print("Registers:\n");
+
+    print("STATUS: %02lX\n", status);
+    print("MODE: %06lX\n", mode);
+    print("CONFIG: %06lX\n", config);
+    print("DATA: %06lX\n", data);
+    print("ID: %02lX\n", id);
+    print("GPOCON: %02lX\n", gpocon);
+    print("OFFSET: %06lX\n", offset);
+    print("FULL_SCALE: %06lX\n", full_scale);
+}
+
+
 
 
 

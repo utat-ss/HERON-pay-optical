@@ -20,8 +20,7 @@ int main(void){
 
     print("\nStarting test\n\n");
 
-    uint32_t status = opt_adc_read_reg(STATUS_ADDR);
-    print("Status reg: %02X\n", status);
+    opt_adc_read_all_regs();
 
     while (1) {
         // Voltage is unipolar (pseudo-differential, pseudo bit = 1)

@@ -51,15 +51,14 @@ TODO - check configuration register bits:
 #define CONFIG_PSEUDO       (1UL << 18)
 #define CONFIG_UNIPOLAR     (1UL << 3)
 
-#define MODE_SINGLE_CONV    (0b001UL << 21)
-#define MODE_POWER_DOWN     (0b011UL << 21)
-
-// Mode select bits for continuous conversion or calibration (p. 21-23, 37)
-#define CONT_CONV             0x0
-#define INT_ZERO_SCALE_CALIB  0x4
-#define INT_FULL_SCALE_CALIB  0x5
-#define SYS_ZERO_SCALE_CALIB  0x6
-#define SYS_FULL_SCALE_CALIB  0x7
+// Operating mode select bits  (p. 21-23, 37)
+#define MODE_CONT_CONV              0b000   // continuous conversion
+#define MODE_SINGLE_CONV            0b001   // single conversion
+#define MODE_POWER_DOWN             0b011   // power down
+#define MODE_INT_ZERO_SCALE_CALIB   0b100   // calibration
+#define MODE_INT_FULL_SCALE_CALIB   0b101
+#define MODE_SYS_ZERO_SCALE_CALIB   0b110
+#define MODE_SYS_FULL_SCALE_CALIB   0b111
 
 
 uint32_t opt_adc_read_reg(uint8_t register_addr);
@@ -69,5 +68,7 @@ void opt_adc_init(void);
 
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number);
+
+void opt_adc_read_all_regs(void);
 
 #endif
