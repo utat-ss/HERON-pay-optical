@@ -12,13 +12,19 @@ int main(void){
     init_uart();
     print("\n\nUART initialized\n");
 
+    init_spi();
+    print("SPI initialized\n");
+
     opt_adc_init();
     print("Optical ADC initialized\n");
+
+    print("\nStarting test\n\n");
 
     while (1) {
         for (uint8_t i = 0; i < 36; i++) {
             uint32_t raw_data = opt_adc_read_field_raw_data(i);
             print("Field #%u, Data = %06x = %d %%\n", i, raw_data, (int8_t) ((double) raw_data / (double) 0xFFFFFF * 100.0));
+            _delay_ms(2000);
         }
 
         print("\n");

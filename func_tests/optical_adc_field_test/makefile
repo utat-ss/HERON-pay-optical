@@ -1,4 +1,4 @@
-PROG = optical_adc_test
+PROG = optical_adc_field_test
 # SRC should only include necessary files
 SRC = $(addprefix ../../src/,optical_adc.c)
 include ../makefile

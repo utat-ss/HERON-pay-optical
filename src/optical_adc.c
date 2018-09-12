@@ -22,14 +22,10 @@ TODO:
 void opt_adc_init_config(void);
 void opt_adc_init_mode(void);
 
-uint32_t opt_adc_read_reg(uint8_t register_addr);
-void opt_adc_write_reg(uint8_t register_addr, uint32_t data);
-
 void opt_adc_select_channel(uint8_t channel_num);
 void opt_adc_select_pga(uint8_t gain);
 void opt_adc_select_op_mode(uint32_t mode_bits);
 
-uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 
 void opt_adc_enable_mux(uint8_t channel);
 void opt_adc_disable_mux(void);
@@ -39,7 +35,7 @@ uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 
 
 
-
+// TODO - p.32 - "Following a reset, the user should allow a period of 200 μs before addressing the serial interface."
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
 
@@ -67,6 +63,7 @@ void opt_adc_init_config(void) {
     // Enable pseudo-differential output
     // Enable unipolar (positive voltage) mode
     // Set gain to 0b000 (PGA = 1)
+    // Pseudo bit = 1
     config = config | CONFIG_PSEUDO;
     config = config | CONFIG_UNIPOLAR;
     config = config & 0xFFFFF8;
@@ -87,9 +84,10 @@ void opt_adc_init_mode(void) {
 }
 
 
+// TODO - is the _RDY_ pin only set low for a read from the data register or any register?
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
-
+    print("\n");
     register_addr = register_addr & 0b111;
 
     // Start communication
@@ -103,7 +101,8 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
 
     // Read the required number of bytes based on register
     uint32_t data = 0;
-    for (uint8_t i = 0; i < opt_adc_num_reg_bytes(register_addr); i++) {
+    uint8_t num_bytes = opt_adc_num_reg_bytes(register_addr);
+    for (uint8_t i = 0; i < num_bytes; i++) {
         uint8_t next_byte = send_spi(0x00);
         print("Received byte: %02X\n", next_byte);
         data = (data << 8) | next_byte;
@@ -112,7 +111,7 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Stop communication
     set_cs_high(CS_PIN, &CS_PORT);
 
-    print("Read register data: %06X\n", data);
+    print("Read register data: %06lX\n", data);
 
     return data;
 }
@@ -120,7 +119,7 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
 
 void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     // Writes a new state to the specified ADC register.
-
+    print("\n");
     register_addr = register_addr & 0b111;
 
     // Start communication
@@ -132,7 +131,7 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     send_spi(spi_tx);
     print("Write register request: %02X\n", spi_tx);
 
-    print("Write register data: %06X\n", data);
+    print("Write register data: %06lX\n", data);
 
     // Write the number of bytes in the register
     for (int8_t i = opt_adc_num_reg_bytes(register_addr) - 1; i >= 0; i--) {
@@ -148,6 +147,7 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
 
 void opt_adc_select_channel(uint8_t channel_num) {
     // Sets the configuration register's bits for the specified ADC input channel.
+    // channel_num must be between 1 and 16
 
     // Get the 4 bits for the channel for psuedo-differential positive input (p. 26)
     uint8_t channel_bits = (channel_num - 1) << 4;
@@ -188,7 +188,7 @@ void opt_adc_select_op_mode(uint32_t mode_bits) {
     // Read from mode register
     uint32_t mode_reg = opt_adc_read_reg(MODE_ADDR);
 
-    // Clear gain bits and set
+    // Clear mode bits and set
     mode_reg &= 0x1fffff;
     mode_reg |= mode_bits;
 
@@ -197,6 +197,11 @@ void opt_adc_select_op_mode(uint32_t mode_bits) {
 }
 
 
+// See the single conversion mode, p.33
+// TODO - CS must be kept low the whole time
+// (write to mode register, then read from data register)
+// TODO - read_reg and write_reg functions should not set CS
+// TODO - p.23 - "The internal clock requires 200 μs typically to power up and settle."
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     // Reads 24 bit raw data from the specified ADC channel.
 
@@ -209,6 +214,9 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     uint16_t timeout = 1023;
     while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
+    }
+    if (timeout == 0) {
+        print("ERROR: TIMEOUT\n");
     }
 
     // Read back the conversion result

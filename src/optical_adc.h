@@ -62,7 +62,12 @@ TODO - check configuration register bits:
 #define SYS_FULL_SCALE_CALIB  0x7
 
 
+uint32_t opt_adc_read_reg(uint8_t register_addr);
+void opt_adc_write_reg(uint8_t register_addr, uint32_t data);
+
 void opt_adc_init(void);
+
+uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number);
 
 #endif
