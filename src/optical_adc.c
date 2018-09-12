@@ -19,7 +19,7 @@ TODO:
 
 #include "optical_adc.h"
 
-
+void opt_adc_reset(void);
 void opt_adc_init_config(void);
 void opt_adc_init_mode(void);
 
@@ -42,6 +42,8 @@ void opt_adc_init(void){
     init_cs(CS_PIN, &CS_DDR);
     set_cs_high(CS_PIN, &CS_PORT);
 
+    opt_adc_reset();
+
     // opt_adc_write_reg(CONFIG_ADDR, CONFIG_DEFAULT);
     // "Continuous conversion is the default power-up mode." (p. 32)
 
@@ -54,6 +56,21 @@ void opt_adc_init(void){
 
     opt_adc_init_config();
     opt_adc_init_mode();
+}
+
+
+void opt_adc_reset(void) {
+    // p.32 - "If a Logic 1 is written to the AD7194 DIN line for at least 40 serial clock cycles, the serial interface is reset."
+    // Just use 48 clock cycles
+    // TODO - does CS need to be low?
+    set_cs_low(CS_PIN, &CS_PORT);
+    for (uint8_t i = 0; i < 6; i++) {
+        send_spi(0xFF);
+    }
+    set_cs_high(CS_PIN, &CS_PORT);
+
+    // p.32 - "Following a reset, the user should allow a period of 200 μs before addressing the serial interface."
+    _delay_us(200);
 }
 
 
