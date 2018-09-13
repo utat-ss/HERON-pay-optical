@@ -10,6 +10,12 @@ ADC library in lib-common.
 
 - single conversion mode
 
+GPIO pins:
+P3 - _EN_
+P2 - A2
+P1 - A1
+P0 - A0
+
 TODO:
 * Add a function to automatically scale gain
 * Add calibration function
@@ -39,8 +45,13 @@ uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
 
+    // Set _CS_ high
     init_cs(CS_PIN, &CS_DDR);
     set_cs_high(CS_PIN, &CS_PORT);
+
+    // Set _SYNC_ high
+    init_cs(SYNC_PIN, &SYNC_DDR);
+    set_cs_high(SYNC_PIN, &SYNC_PORT);
 
     opt_adc_reset();
 
@@ -75,6 +86,7 @@ void opt_adc_reset(void) {
 
 
 // Initializes configuration register
+// TODO - make all into a constant
 void opt_adc_init_config(void) {
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
@@ -91,12 +103,14 @@ void opt_adc_init_config(void) {
 
 
 // Initializes mode register
+// TODO - make all into a constant
+// clock - internal, don't output onto MCLK2
 void opt_adc_init_mode(void) {
     uint32_t mode = opt_adc_read_reg(MODE_ADDR);
 
     // Clear first 3 bits and set operating mode to power down mode
     mode = mode & 0x1FFFFF;
-    mode = mode | MODE_POWER_DOWN;
+    mode = mode | (((uint32_t) MODE_POWER_DOWN) << 21);
 
     opt_adc_write_reg(MODE_ADDR, mode);
 }
@@ -120,9 +134,10 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the required number of bytes based on register
     uint32_t data = 0;
     uint8_t num_bytes = opt_adc_num_reg_bytes(register_addr);
+    print("%u bytes\n", num_bytes);
     for (uint8_t i = 0; i < num_bytes; i++) {
         uint8_t next_byte = send_spi(0x00);
-        print("Received byte: %02X\n", next_byte);
+        // print("Received byte: %02X\n", next_byte);
         data = (data << 8) | next_byte;
     }
 
@@ -152,10 +167,12 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     print("Write register data: %06lX\n", data);
 
     // Write the number of bytes in the register
-    for (int8_t i = opt_adc_num_reg_bytes(register_addr) - 1; i >= 0; i--) {
+    uint8_t num_bytes = opt_adc_num_reg_bytes(register_addr);
+    print("%u bytes\n", num_bytes);
+    for (int8_t i = num_bytes - 1; i >= 0; i--) {
         uint8_t next_byte = data >> (i * 8);
         send_spi(next_byte);
-        print("Sent byte: %02X\n", next_byte);
+        // print("Sent byte: %02X\n", next_byte);
     }
 
     // Set CS high
@@ -225,12 +242,14 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
 
     // Select the channel for conversion
     opt_adc_select_channel(channel_num);
-    opt_adc_select_pga(gain);
+    // TODO - store gain variable and check if it changed?
+    // TODO - set gain
+    // opt_adc_select_pga(gain);
     opt_adc_select_op_mode(MODE_SINGLE_CONV);
 
     // p.23 - "The internal clock requires 200 μs typically to power up and settle."
     // TODO - check delay time - is it necessary?
-    _delay_us(200);
+    // _delay_us(200);
 
     /*
     FAQ p.10
@@ -239,6 +258,7 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     */
     // Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
     // Must set _CS_ low first for this to work
+    // TODO - Maybe read the status register instead to check RDY?
     set_cs_low(CS_PIN, &CS_PORT);
     // TODO - change timeout
     uint16_t timeout = 65535;

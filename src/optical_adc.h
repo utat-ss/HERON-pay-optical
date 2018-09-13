@@ -21,6 +21,11 @@
 #define MISO_PORT   PORTB
 #define MISO_DDR    DDRB
 
+// _SYNC_ pin
+#define SYNC_PIN      PC7
+#define SYNC_PORT     PORTC
+#define SYNC_DDR      DDRC
+
 // Register addresses (p.20)
 #define STATUS_ADDR     0x00
 #define MODE_ADDR       0x01
