@@ -119,7 +119,6 @@ void opt_adc_init_mode(void) {
 // TODO - is the _RDY_ pin only set low for a read from the data register or any register?
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
-    print("\n");
     register_addr = register_addr & 0b111;
 
     // Start communication
@@ -129,12 +128,12 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Request a read from the specified register
     uint8_t spi_tx = COMM_READ | (register_addr << 3);
     send_spi(spi_tx);
-    print("Read register request: %02X\n", spi_tx);
+    // print("Read register request: %02X\n", spi_tx);
 
     // Read the required number of bytes based on register
     uint32_t data = 0;
     uint8_t num_bytes = opt_adc_num_reg_bytes(register_addr);
-    print("%u bytes\n", num_bytes);
+    // print("%u bytes\n", num_bytes);
     for (uint8_t i = 0; i < num_bytes; i++) {
         uint8_t next_byte = send_spi(0x00);
         // print("Received byte: %02X\n", next_byte);
@@ -144,7 +143,7 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Stop communication
     set_cs_high(CS_PIN, &CS_PORT);
 
-    print("Read register data: %06lX\n", data);
+    // print("Read register data: %06lX\n", data);
 
     return data;
 }
@@ -152,7 +151,6 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
 
 void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     // Writes a new state to the specified ADC register.
-    print("\n");
     register_addr = register_addr & 0b111;
 
     // Start communication
@@ -162,13 +160,13 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     // Request a write to the specified register
     uint8_t spi_tx = COMM_WRITE | (register_addr << 3);
     send_spi(spi_tx);
-    print("Write register request: %02X\n", spi_tx);
+    // print("Write register request: %02X\n", spi_tx);
 
-    print("Write register data: %06lX\n", data);
+    // print("Write register data: %06lX\n", data);
 
     // Write the number of bytes in the register
     uint8_t num_bytes = opt_adc_num_reg_bytes(register_addr);
-    print("%u bytes\n", num_bytes);
+    // print("%u bytes\n", num_bytes);
     for (int8_t i = num_bytes - 1; i >= 0; i--) {
         uint8_t next_byte = data >> (i * 8);
         send_spi(next_byte);
@@ -247,24 +245,28 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     // opt_adc_select_pga(gain);
     opt_adc_select_op_mode(MODE_SINGLE_CONV);
 
-    // p.23 - "The internal clock requires 200 μs typically to power up and settle."
-    // TODO - check delay time - is it necessary?
-    // _delay_us(200);
-
     /*
     FAQ p.10
     "the user can take CS low, initiate the single conversion and then take CS high again...
     When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
+
+    Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
+    Must set _CS_ low first for this to work
+
+    In testing, 200us is about 150 timeout cycles (about 1.333us per timeout cycle)
+    In testing, the ADC reading/conversion takes about 63,150 timeout cycles (if no delays), i.e. about 84ms
+
+    TODO - Maybe read the status register instead to check RDY?
     */
-    // Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
-    // Must set _CS_ low first for this to work
-    // TODO - Maybe read the status register instead to check RDY?
+
+    _delay_ms(75);  // equivalent to about 60,000 timeout cycles
     set_cs_low(CS_PIN, &CS_PORT);
     // TODO - change timeout
     uint16_t timeout = 65535;
     while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
     }
+    // print("Waited for %u cycles\n", 65535 - timeout);
     if (timeout == 0) {
         print("ERROR: TIMEOUT\n");
     } else {
@@ -418,7 +420,7 @@ void opt_adc_read_all_regs(void) {
     uint32_t offset = opt_adc_read_reg(OFFSET_ADDR);
     uint32_t full_scale = opt_adc_read_reg(FULL_SCALE_ADDR);
 
-    print("Registers:\n");
+    print("\nRegisters:\n");
 
     print("STATUS: %02lX\n", status);
     print("MODE: %06lX\n", mode);
