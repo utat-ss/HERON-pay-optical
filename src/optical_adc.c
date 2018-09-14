@@ -41,7 +41,6 @@ uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 
 
 
-// TODO - p.32 - "Following a reset, the user should allow a period of 200 μs before addressing the serial interface."
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
 
@@ -57,8 +56,6 @@ void opt_adc_init(void){
 
     // opt_adc_write_reg(CONFIG_ADDR, CONFIG_DEFAULT);
     // "Continuous conversion is the default power-up mode." (p. 32)
-
-    // TODO - start in power down mode
 
     // GPOCON register - enable 4 GPIO outputs
     // _EN_ = 1, A2/A1/A0 = 0
@@ -116,7 +113,6 @@ void opt_adc_init_mode(void) {
 }
 
 
-// TODO - is the _RDY_ pin only set low for a read from the data register or any register?
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
     register_addr = register_addr & 0b111;
@@ -231,10 +227,6 @@ void opt_adc_select_op_mode(uint8_t mode_bits) {
 
 
 // See the single conversion mode, p.33
-// TODO - CS must be kept low the whole time
-// (write to mode register, then read from data register)
-// TODO - read_reg and write_reg functions should not set CS
-// TODO - p.23 - "The internal clock requires 200 μs typically to power up and settle."
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     // Reads 24 bit raw data from the specified ADC channel.
 
@@ -246,6 +238,8 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     opt_adc_select_op_mode(MODE_SINGLE_CONV);
 
     /*
+    p.33 - "DOUT/RDY goes low to indicate the completion of a conversion."
+
     FAQ p.10
     "the user can take CS low, initiate the single conversion and then take CS high again...
     When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
@@ -255,13 +249,10 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
 
     In testing, 200us is about 150 timeout cycles (about 1.333us per timeout cycle)
     In testing, the ADC reading/conversion takes about 63,150 timeout cycles (if no delays), i.e. about 84ms
-
-    TODO - Maybe read the status register instead to check RDY?
     */
 
     _delay_ms(75);  // equivalent to about 60,000 timeout cycles
     set_cs_low(CS_PIN, &CS_PORT);
-    // TODO - change timeout
     uint16_t timeout = 65535;
     while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
