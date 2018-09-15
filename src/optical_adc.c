@@ -24,6 +24,7 @@ TODO:
 */
 
 #include "optical_adc.h"
+#include "syncdemod.h"
 
 void opt_adc_reset(void);
 void opt_adc_init_config(void);
@@ -335,9 +336,9 @@ uint8_t opt_adc_gain_to_gain_bits(uint8_t gain) {
 }
 
 
-// channel - channel to select (between 1 and 8 to represent S1-S8)
+// channel - channel to select (between 0 and 7 to represent S1-S8)
 void opt_adc_enable_mux(uint8_t channel) {
-    uint8_t channel_bits = channel - 1;
+    uint8_t channel_bits = channel;
 
     // Set _EN_ (bit 3) = 0, bits 2-0 = channel
     uint8_t gpocon = opt_adc_read_reg(GPOCON_ADDR);
@@ -362,37 +363,47 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     uint8_t group = field_number / 8;
     uint8_t address = field_number % 8;
 
+    // determine which ADC channel and syncdemod CS pin to use
+    uint8_t adc_channel;
+    uint8_t sd_cs_pin;
+	switch (group) {
+		case 0:
+			adc_channel = 5;
+			sd_cs_pin = SD1_CS_PIN;
+			break;
+		case 1:
+			adc_channel = 7;
+			sd_cs_pin = SD2_CS_PIN;
+			break;
+		case 2:
+			adc_channel = 9;
+			sd_cs_pin = SD3_CS_PIN;
+			break;
+		case 3:
+			adc_channel = 11;
+			sd_cs_pin = SD4_CS_PIN;
+			break;
+		case 4:
+			adc_channel = 13;
+			sd_cs_pin = SD4_CS_PIN;
+			break;
+		default:
+			print("Unexpected sensor group\n");
+			adc_channel = 5;
+			sd_cs_pin = SD1_CS_PIN;
+			break;
+	}
+
     // Enable the mux for the appropriate address
     // (this should turn on the LED and enable the amplifier)
-    opt_adc_enable_mux(address + 1);
+    opt_adc_enable_mux(address);
+    syncdemod_enable_rclk(sd_cs_pin);
+    // TODO: why is this delay here?
     _delay_ms(100);
-    // TODO - set up and configure synchronous demodulator
-
-    uint8_t adc_channel;
-    switch (group) {
-        case 0:
-            adc_channel = 5;
-            break;
-        case 1:
-            adc_channel = 7;
-            break;
-        case 2:
-            adc_channel = 9;
-            break;
-        case 3:
-            adc_channel = 11;
-            break;
-        case 4:
-            adc_channel = 13;
-            break;
-        default:
-            print("Unexpected sensor group\n");
-            adc_channel = 5;
-            break;
-    }
 
     // Read ADC data and prepare to send it over SPI
     uint32_t raw_data = opt_adc_read_channel_raw_data(adc_channel, 1);
+    syncdemod_disable_rclk(sd_cs_pin);
     opt_adc_disable_mux();
 
     return raw_data;
