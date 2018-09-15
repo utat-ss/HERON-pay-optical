@@ -6,10 +6,10 @@
 #include <util/delay.h>
 
 int main(void){
-  stop_timer();
-  _delay_ms(5000);
-  start_timer();
-  init_pwm_8bit(4, 255);
-  init_pwm_16bit(0, 0xFFFF, 0x0FFF);
+    stop_timer();
+    _delay_ms(5000);
+    start_timer();
+    init_pwm_8bit(4, 255);
+    init_pwm_16bit(0, 0xFFFF, 0x0FFF);
 
 }
