@@ -65,6 +65,7 @@ void opt_adc_init(void){
 
     opt_adc_init_config();
     opt_adc_init_mode();
+    syncdemod_init();
 }
 
 
