@@ -40,8 +40,6 @@ void opt_adc_disable_mux(void);
 uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
 uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 
-
-
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
 
@@ -60,11 +58,11 @@ void opt_adc_init(void){
 
     // GPOCON register - enable 4 GPIO outputs
     // _EN_ = 1, A2/A1/A0 = 0
-    // TODO - make a constant?
-    opt_adc_write_reg(GPOCON_ADDR, 0b00111000);
+    opt_adc_write_reg(GPOCON_ADDR, GPOCON_SETTING);
 
     opt_adc_init_config();
-    opt_adc_init_mode();
+//    opt_adc_init_mode();
+    opt_adc_select_op_mode(MODE_POWER_DOWN);
     syncdemod_init();
 }
 
@@ -85,7 +83,6 @@ void opt_adc_reset(void) {
 
 
 // Initializes configuration register
-// TODO - make all into a constant
 void opt_adc_init_config(void) {
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
@@ -95,29 +92,14 @@ void opt_adc_init_config(void) {
     // Pseudo bit = 1
     config = config | CONFIG_PSEUDO;
     config = config | CONFIG_UNIPOLAR;
-    config = config & 0xFFFFF8;
+    config = config & CONFIG_MASK;
 
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
 
-
-// Initializes mode register
-// TODO - make all into a constant
-// clock - internal, don't output onto MCLK2
-void opt_adc_init_mode(void) {
-    uint32_t mode = opt_adc_read_reg(MODE_ADDR);
-
-    // Clear first 3 bits and set operating mode to power down mode
-    mode = mode & 0x1FFFFF;
-    mode = mode | (((uint32_t) MODE_POWER_DOWN) << 21);
-
-    opt_adc_write_reg(MODE_ADDR, mode);
-}
-
-
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
-    register_addr = register_addr & 0b111;
+    register_addr = register_addr & REGISTER_ADDRESS_MASK;
 
     // Start communication
     set_cs_low(CS_PIN, &CS_PORT);
@@ -149,7 +131,7 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
 
 void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     // Writes a new state to the specified ADC register.
-    register_addr = register_addr & 0b111;
+    register_addr = register_addr & REGISTER_ADDRESS_MASK;
 
     // Start communication
     set_cs_low(CS_PIN, &CS_PORT);
@@ -187,7 +169,7 @@ void opt_adc_select_channel(uint8_t channel_num) {
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
     // Mask the channel bits and write new channel
-    config &= 0xffff00ff;
+    config &= CHANNEL_MASK;
     config |= ((uint32_t) channel_bits) << 8;
 
     // Write the new config register value
@@ -206,7 +188,8 @@ void opt_adc_select_pga(uint8_t gain) {
     uint32_t config_data = opt_adc_read_reg(CONFIG_ADDR);
 
     // Clear gain bits and set
-    config_data &= 0xfffff8;
+//    config_data &= 0xfffff8;
+    config_data &= CONFIG_MASK;
     config_data |= gain_bits;
 
     // Write to configuration register
@@ -220,7 +203,7 @@ void opt_adc_select_op_mode(uint8_t mode_bits) {
     uint32_t mode_reg = opt_adc_read_reg(MODE_ADDR);
 
     // Clear mode bits and set
-    mode_reg &= 0x1fffff;
+    mode_reg &= MODE_MASK;
     mode_reg |= ((uint32_t) mode_bits) << 21;
 
     // Write to configuration register
@@ -343,7 +326,7 @@ void opt_adc_enable_mux(uint8_t channel) {
 
     // Set _EN_ (bit 3) = 0, bits 2-0 = channel
     uint8_t gpocon = opt_adc_read_reg(GPOCON_ADDR);
-    gpocon = gpocon & 0xF0;
+    gpocon = gpocon & GPOCON_MASK;
     gpocon = gpocon | channel_bits;
     opt_adc_write_reg(GPOCON_ADDR, gpocon);
 }

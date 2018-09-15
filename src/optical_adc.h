@@ -53,14 +53,22 @@ TODO - check configuration register bits:
 * bit[3] set to 1 - unipolar or bipolar (1 for unipolar)
 * bit[2:0] set to 000 - programmable gain
 */
-#define CONFIG_PSEUDO       (1UL << 18)
-#define CONFIG_UNIPOLAR     (1UL << 3)
+#define CONFIG_PSEUDO       		(1UL << 18)
+#define CONFIG_UNIPOLAR     		(1UL << 3)
+
+// configuration data
+#define GPOCON_SETTING				0b00111000
+#define GPOCON_MASK					0xF0
+#define CONFIG_MASK					0xFFFFF8
+#define MODE_MASK					0x1FFFFF
+#define CHANNEL_MASK				0xFFFF00FF
+#define REGISTER_ADDRESS_MASK		0b111
 
 // Operating mode select bits  (p. 21-23, 37)
-#define MODE_CONT_CONV              0b000   // continuous conversion
-#define MODE_SINGLE_CONV            0b001   // single conversion
-#define MODE_POWER_DOWN             0b011   // power down
-#define MODE_INT_ZERO_SCALE_CALIB   0b100   // calibration
+#define MODE_CONT_CONV              0b000   	// continuous conversion
+#define MODE_SINGLE_CONV            0b001   	// single conversion
+#define MODE_POWER_DOWN            	0b011		// power down
+#define MODE_INT_ZERO_SCALE_CALIB   0b100   	// calibration
 #define MODE_INT_FULL_SCALE_CALIB   0b101
 #define MODE_SYS_ZERO_SCALE_CALIB   0b110
 #define MODE_SYS_FULL_SCALE_CALIB   0b111
