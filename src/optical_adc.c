@@ -34,12 +34,8 @@ void opt_adc_select_channel(uint8_t channel_num);
 void opt_adc_select_pga(uint8_t gain);
 void opt_adc_select_op_mode(uint8_t mode_bits);
 
-void opt_adc_enable_mux(uint8_t channel);
-void opt_adc_disable_mux(void);
-
 uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
 uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
-
 
 
 void opt_adc_init(void){
