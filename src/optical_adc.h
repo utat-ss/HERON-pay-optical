@@ -73,6 +73,8 @@ TODO - check configuration register bits:
 #define MODE_SYS_ZERO_SCALE_CALIB   0b110
 #define MODE_SYS_FULL_SCALE_CALIB   0b111
 
+void opt_adc_enable_mux(uint8_t channel);
+void opt_adc_disable_mux(void);
 
 uint32_t opt_adc_read_reg(uint8_t register_addr);
 void opt_adc_write_reg(uint8_t register_addr, uint32_t data);
