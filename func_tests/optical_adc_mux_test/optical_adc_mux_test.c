@@ -17,7 +17,8 @@ Typical on resistance: 185 ohms (p.7)
 #include <util/delay.h>
 #include "../../src/optical_adc.h"
 
-bool key_pressed = false;
+// Need volatile because C does not interpret the interrupt
+volatile bool key_pressed = false;
 
 uint8_t echo(const uint8_t* buf, uint8_t len) {
     if (len == 0) {
