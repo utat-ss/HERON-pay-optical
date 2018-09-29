@@ -10,6 +10,7 @@
 */
 
 #include "syncdemod.h"
+#include "uart/uart.h"
 
 void syncdemod_init() {
     uint8_t sd_cs_pin;
@@ -79,12 +80,16 @@ void syncdemod_set_clock(uint8_t sd_cs_pin, int clkin_div, uint8_t rclk_div){
         // default (on reset) is clkin div == 1
         case 1:
             clkin_bits = 0x00;
+            break;
         case 16:
             clkin_bits = 0x01;
+            break;
         case 64:
             clkin_bits = 0x02;
+            break;
         case 256:
             clkin_bits = 0x04;
+            break;
         default:
             clkin_bits = 0x00;
     }
@@ -93,13 +98,16 @@ void syncdemod_set_clock(uint8_t sd_cs_pin, int clkin_div, uint8_t rclk_div){
         // default (on reset) is rclk div == 8
         case 4:
             rclk_bits = 0x01;
+            break;
         case 8:
             rclk_bits = 0x02;
+            break;
         default:
             rclk_bits = 0x02;
     }
 
     command = (clkin_bits << 2) | rclk_bits;
+    print ("clock command: %u\n", command);
     syncdemod_write_register(sd_cs_pin, SD_CLK_CONFIG_ADDR, command);
 }
 
