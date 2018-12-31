@@ -20,6 +20,8 @@ void syncdemod_init() {
         // initialize the SPI pin behaviour
         init_cs(sd_cs_pin, &SD_CS_DDR);
         set_cs_high(sd_cs_pin, &SD_CS_PORT);
+        // reset the synchronous demadulator
+        syncdemod_reset(sd_cs_pin);
         // Write the default configuration register
         syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, SD_SERIAL_CONFIG_DEFAULT);
         // disable the RCLK output
@@ -147,7 +149,7 @@ void syncdemod_reset(uint8_t sd_cs_pin){
     // Resets the specified device
     uint16_t command;
     // Setting bit 7 and bit 0 to 1 resets the device
-    command = SD_SERIAL_CONFIG_DEFAULT | (0b10000001);
+    command = SD_SERIAL_CONFIG_DEFAULT | (0x80);
     syncdemod_write_register(sd_cs_pin, SD_SERIAL_CONFIG_ADDR, command);
     _delay_ms(1);
     command = SD_SERIAL_CONFIG_DEFAULT;

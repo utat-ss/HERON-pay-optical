@@ -26,16 +26,6 @@ TODO:
 #include "optical_adc.h"
 #include "syncdemod.h"
 
-void opt_adc_reset(void);
-void opt_adc_init_config(void);
-void opt_adc_init_mode(void);
-
-void opt_adc_select_channel(uint8_t channel_num);
-void opt_adc_select_pga(uint8_t gain);
-void opt_adc_select_op_mode(uint8_t mode_bits);
-
-uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
-uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
 
 void opt_adc_init(void){
     // Initialize ports and registers needed for ADC usage
@@ -58,7 +48,7 @@ void opt_adc_init(void){
     opt_adc_write_reg(GPOCON_ADDR, GPOCON_SETTING);
 
     opt_adc_init_config();
-//    opt_adc_init_mode();
+    // opt_adc_init_mode();
     opt_adc_select_op_mode(MODE_POWER_DOWN);
     syncdemod_init();
 }
@@ -324,6 +314,7 @@ void opt_adc_enable_mux(uint8_t channel) {
     // Set _EN_ (bit 3) = 0, bits 2-0 = channel
     uint8_t gpocon = opt_adc_read_reg(GPOCON_ADDR);
     gpocon = gpocon & GPOCON_MASK;
+    gpocon = gpocon | (0x3 << 4);
     gpocon = gpocon | channel_bits;
     opt_adc_write_reg(GPOCON_ADDR, gpocon);
 }

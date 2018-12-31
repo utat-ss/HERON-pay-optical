@@ -35,8 +35,8 @@
 // bit 6 == 1 delays phase of RCLK
 // bit 4 == 1 holds the last sample while RCLK inactive
 // bit 3 == 1 sends RCLK to output
-// bit[2:0] == 000 sets VOCM to VDD/2 low power mode
-#define SD_DEMOD_CONTROL_DEFAULT    0x18
+// bit[2:0] == 010 sets VOCM to VDD/2 fast settling mode
+#define SD_DEMOD_CONTROL_DEFAULT    0x1A
 
 void syncdemod_init();
 void syncdemod_write_register(uint8_t sd_cs_pin, uint16_t addr, uint8_t data);

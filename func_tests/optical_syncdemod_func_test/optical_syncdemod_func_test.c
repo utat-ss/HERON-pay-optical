@@ -15,6 +15,7 @@
 #define CH5_EN			PIN2
 
 int main(void){
+
     init_uart();
     print("\n\nUART initialized\n");
 
@@ -22,15 +23,11 @@ int main(void){
     print("SPI initialized\n");
 
     init_cs(CH5_EN, &CH5_EN_DDR);
-    set_cs_high(CH5_EN, &CH5_EN_PORT);
+    set_cs_low(CH5_EN, &CH5_EN_PORT); // enable mux channel 5
     print("Disabled channel 5\n");
 
     opt_adc_init();
     print("Optical ADC initialized\n");
-
-    // 160KHz, 50% duty input signal to the syncdemod
-    // (8MHz / 50 = 160KHz)
-    // should result in an RCLK of 2.5KHz
 
     // Changed to 33KHz setpoint
     // Observed about 513 Hz with almost exactly 50% duty cycle
@@ -39,8 +36,9 @@ int main(void){
 
     print("\nStarting test\n\n");
 
-    opt_adc_enable_mux(2);
+    opt_adc_enable_mux(2);    // enable channel 2 which connects to the 1x SMA
     syncdemod_enable_rclk(SD4_CS_PIN);
+    
     while (1) {
     }
 }

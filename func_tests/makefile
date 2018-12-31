@@ -14,7 +14,7 @@ MCU = m32m1
 
 # Libraries from lib-common to link
 # May need to change this line
-LIB = -L ../../lib-common/lib -luart -lspi -lcan -lpex -lconversions
+LIB = -L ../../lib-common/lib -luart -lspi -lcan -lpex -lconversions -lutilities
 
 # Computer port that the programmer is connected to
 # May need to change the PORT definition based on your OS and port
@@ -22,7 +22,7 @@ LIB = -L ../../lib-common/lib -luart -lspi -lcan -lpex -lconversions
 
 # Windows
 ifeq ($(OS),Windows_NT)
-	PORT = COM3
+	PORT = COM4
 	# PORT = COM5
 
 else
