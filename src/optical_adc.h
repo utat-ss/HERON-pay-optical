@@ -61,7 +61,8 @@ TODO - check configuration register bits:
 #define GPOCON_MASK					0xF0
 #define CONFIG_MASK					0xFFFFF8
 #define MODE_MASK					0x1FFFFF
-#define CHANNEL_MASK				0xFFFF00FF
+#define CHANNEL_MASK_POS            0xFFFF0FFF
+#define CHANNEL_MASK_NEG            0xFFFFF0FF
 #define REGISTER_ADDRESS_MASK		0b111
 
 // Operating mode select bits  (p. 21-23, 37)
@@ -76,6 +77,7 @@ TODO - check configuration register bits:
 void opt_adc_reset(void);
 void opt_adc_init_config(void);
 void opt_adc_init_mode(void);
+void opt_adc_init_sync(uint8_t pair_num);
 
 void opt_adc_select_channel(uint8_t channel_num);
 void opt_adc_select_pga(uint8_t gain);
@@ -94,6 +96,7 @@ void opt_adc_init(void);
 
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number);
+uint32_t opt_adc_read_channel(uint8_t channel_num);
 
 void opt_adc_read_all_regs(void);
 

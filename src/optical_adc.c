@@ -84,6 +84,47 @@ void opt_adc_init_config(void) {
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
 
+// Initializes continous sync mode
+// pair_num 0 = AIN5+ve, AIN6-ve
+// pair_num 1 = AIN7+ve, AIN8-ve
+// pair_num 2 = AIN9+ve, AIN10-ve
+// pair_num 3 = AIN11+ve, AIN12-ve
+void opt_adc_init_sync(uint8_t pair_num){
+    uint32_t channel_pos, channel_neg = 0;
+    if (pair_num == 0){
+        channel_pos = 5;
+        channel_pos = 6;
+    }
+
+    else if (pair_num == 1){
+        channel_pos = 7;
+        channel_pos = 8;
+    }
+
+    else if (pair_num == 2){
+        channel_pos = 9;
+        channel_pos = 10;
+    }
+
+    else if (pair_num == 3){
+        channel_pos = 11;
+        channel_pos = 12;
+    }
+
+    opt_adc_select_channel(channel_pos, 1);
+    opt_adc_select_channel(channel_neg, 0);
+
+    opt_adc_select_op_mode(MODE_CONT_CONV);
+
+    //wait 4 master clock cycles (1us) for synchronization
+    // (p. 36)
+    set_cs_low(SYNC_PIN, &SYNC_PORT);
+
+    //probably don't need the 1us delay, since 32m1 takes
+    //some time to read instructions anyway
+    //_delay_us(1);
+}
+
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
     register_addr = register_addr & REGISTER_ADDRESS_MASK;
@@ -144,20 +185,27 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     set_cs_high(CS_PIN, &CS_PORT);
 }
 
-
-void opt_adc_select_channel(uint8_t channel_num) {
+void opt_adc_select_channel(uint8_t channel_num, bool sign) {
     // Sets the configuration register's bits for the specified ADC input channel.
     // channel_num must be between 1 and 16
-
-    // Get the 4 bits for the channel for psuedo-differential positive input (p. 26)
-    uint8_t channel_bits = (channel_num - 1) << 4;
+    // accepts 1, -1 for +/- sign, uni-polar is always +, differential requires + and - (p. 26)
 
     // Read the current register status
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
-    // Mask the channel bits and write new channel
-    config &= CHANNEL_MASK;
-    config |= ((uint32_t) channel_bits) << 8;
+    // Get the 4 bits for the channel for psuedo-differential positive input (p. 26)
+    if (sign){ // +ve
+        uint8_t channel_bits = (channel_num - 1) << 4;
+        // Mask the channel bits and write new channel
+        config &= CHANNEL_MASK_POS;
+        config |= ((uint32_t) channel_bits) << 8;
+    }
+    else{ // -ve
+        uint8_t channel_bits = (channel_num -1);
+        // Mask the channel bits and write new channel
+        config &= CHANNEL_MASK_NEG;
+        config |= ((uint32_t) channel_bits) << 8;
+    }
 
     // Write the new config register value
     opt_adc_write_reg(CONFIG_ADDR, config);
@@ -203,7 +251,7 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     // Reads 24 bit raw data from the specified ADC channel.
 
     // Select the channel for conversion
-    opt_adc_select_channel(channel_num);
+    opt_adc_select_channel(channel_num, 1);
     // TODO - store gain variable and check if it changed?
     // TODO - set gain
     // opt_adc_select_pga(gain);
@@ -327,8 +375,6 @@ void opt_adc_disable_mux(void) {
     opt_adc_write_reg(GPOCON_ADDR, gpocon);
 }
 
-
-
 // Reads 24 bits of raw data from the specified field, using the system of 5
 // multiplexors with 8 pins each
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
@@ -338,33 +384,33 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     // determine which ADC channel and syncdemod CS pin to use
     uint8_t adc_channel;
     uint8_t sd_cs_pin;
-	switch (group) {
-		case 0:
-			adc_channel = 5;
-			sd_cs_pin = SD1_CS_PIN;
-			break;
-		case 1:
-			adc_channel = 7;
-			sd_cs_pin = SD2_CS_PIN;
-			break;
-		case 2:
-			adc_channel = 9;
-			sd_cs_pin = SD3_CS_PIN;
-			break;
-		case 3:
-			adc_channel = 11;
-			sd_cs_pin = SD4_CS_PIN;
-			break;
-		case 4:
-			adc_channel = 13;
-			sd_cs_pin = SD4_CS_PIN;
-			break;
-		default:
-			print("Unexpected sensor group\n");
-			adc_channel = 5;
-			sd_cs_pin = SD1_CS_PIN;
-			break;
-	}
+    switch (group) {
+        case 0:
+            adc_channel = 5;
+            sd_cs_pin = SD1_CS_PIN;
+            break;
+        case 1:
+            adc_channel = 7;
+            sd_cs_pin = SD2_CS_PIN;
+            break;
+        case 2:
+            adc_channel = 9;
+            sd_cs_pin = SD3_CS_PIN;
+            break;
+        case 3:
+            adc_channel = 11;
+            sd_cs_pin = SD4_CS_PIN;
+            break;
+        case 4:
+            adc_channel = 13;
+            sd_cs_pin = SD4_CS_PIN;
+            break;
+        default:
+            print("Unexpected sensor group\n");
+            adc_channel = 5;
+            sd_cs_pin = SD1_CS_PIN;
+            break;
+    }
 
     // Enable the mux for the appropriate address
     // (this should turn on the LED and enable the amplifier)
@@ -379,6 +425,22 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     opt_adc_disable_mux();
 
     return raw_data;
+}
+
+uint32_t opt_adc_read_channel(uint8_t channel_num){
+    //set _SYNC high to begin conversion
+    set_cs_high(SYNC_PIN, &SYNC_PORT);
+
+    //wait until conversion finishes, signalled by _RDY going low
+    uint16_t timeout = 1023;
+    while (bit_is_set(MISO_PORT, MISO_PIN) && timeout > 0) {
+        timeout--;
+    }
+
+    //set _SYNC low to resycnhronize
+    set_cs_low(SYNC_PIN, &SYNC_PORT);
+
+    return opt_adc_read_reg(DATA_ADDR);
 }
 
 
