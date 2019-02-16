@@ -12,6 +12,10 @@
 #include "syncdemod.h"
 #include "uart/uart.h"
 
+// default callback
+void sd_nop(void) { }
+sd_fn_t sd_callbacks[4] = {sd_nop, sd_nop, sd_nop, sd_nop};
+
 void syncdemod_init() {
     uint8_t sd_cs_pin;
     // SD CS's are PC3 to PC6
@@ -166,4 +170,43 @@ void syncdemod_toggle_core_reset(uint8_t sd_cs_pin){
             reset_state = 0x00;
     }
     syncdemod_write_register(sd_cs_pin, SD_CORE_RESET_ADDR, reset_state);
+}
+
+/*
+Initialize interrupt pins INT0-INT3 and set callback functions
+*/
+void syncdemod_init_interrupt(sd_fn_t f0, sd_fn_t f1, sd_fn_t f2, sd_fn_t f3) {
+    // set behavior of all interrupts to trigger on rising edge, pg 71
+    EICRA = 0xFF;
+    // enable external interrupt 0-3
+    EIMSK |= 0x0F;
+    // enable global interrupts
+    sei();
+
+    // set callback functions
+    sd_callbacks[0] = f0;
+    sd_callbacks[1] = f1;
+    sd_callbacks[2] = f2;
+    sd_callbacks[3] = f3;
+}
+
+/*
+*/
+ISR(INT0_vect) {
+    sd_callbacks[0]();
+}
+
+
+ISR(INT1_vect) {
+    sd_callbacks[1]();
+}
+
+
+ISR(INT2_vect) {
+    sd_callbacks[2]();
+}
+
+
+ISR(INT3_vect) {
+    sd_callbacks[3]();
 }

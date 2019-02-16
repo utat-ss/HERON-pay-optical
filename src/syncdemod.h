@@ -38,6 +38,9 @@
 // bit[2:0] == 010 sets VOCM to VDD/2 fast settling mode
 #define SD_DEMOD_CONTROL_DEFAULT    0x1A
 
+// define function pointer type
+typedef void(*sd_fn_t)(void);
+
 void syncdemod_init();
 void syncdemod_write_register(uint8_t sd_cs_pin, uint16_t addr, uint8_t data);
 void syncdemod_write_multibyte(uint8_t sd_cs_pin, uint16_t addr, uint8_t len, uint8_t* data);
@@ -50,5 +53,6 @@ void syncdemod_enable_rclk(uint8_t sd_cs_pin);
 void syncdemod_disable_rclk(uint8_t sd_cs_pin);
 void syncdemod_reset(uint8_t sd_cs_pin);
 void syncdemod_toggle_core_reset(uint8_t sd_cs_pin);
+void syncdemod_init_interrupt(sd_fn_t f0, sd_fn_t f1, sd_fn_t f2, sd_fn_t f3);
 
 #endif
