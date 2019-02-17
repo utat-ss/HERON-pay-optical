@@ -1,4 +1,4 @@
-PROG = type_punning_test
+PROG = syncdemod_interrupt_test
 # SRC should only include necessary files
-SRC = $(addprefix ../../src/,)
+SRC = $(addprefix ../../src/,  syncdemod.c)
 include ../makefile

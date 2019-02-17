@@ -1,22 +1,20 @@
 #include <uart/uart.h>
 #include "../../src/syncdemod.h"
 
-
-
 void interrupt0(void) {
-    print("Interrupt 0");
+    print("Interrupt 0\n");
 }
 
 void interrupt1(void) {
-    print("Interrupt 1");
+    print("Interrupt 1\n");
 }
 
 void interrupt2(void) {
-    print("Interrupt 2");
+    print("Interrupt 2\n");
 }
 
 void interrupt3(void) {
-    print("Interrupt 3");
+    print("Interrupt 3\n");
 }
 
 int main(void){
