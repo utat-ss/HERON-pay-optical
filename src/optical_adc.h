@@ -53,15 +53,18 @@ TODO - check configuration register bits:
 * bit[3] set to 1 - unipolar or bipolar (1 for unipolar)
 * bit[2:0] set to 000 - programmable gain
 */
-#define CONFIG_PSEUDO       		(1UL << 18)
+#define CONFIG_PSEUDO_ON       		(1UL << 18)
+#define CONFIG_PSEUDO_OFF     		(0UL << 18)
 #define CONFIG_UNIPOLAR     		(1UL << 3)
+#define CONFIG_BIPOLAR     			(0UL << 3)
 
 // configuration data
 #define GPOCON_SETTING				0b00111000
 #define GPOCON_MASK					0xF0
-#define CONFIG_MASK					0xFFFFF8
+#define CONFIG_MASK					0xFFFBFFF7
 #define MODE_MASK					0x1FFFFF
 #define CHANNEL_MASK_POS            0xFFFF0FFF
+#define PSEUDO_MASK					0xFFFBFFFF
 #define CHANNEL_MASK_NEG            0xFFFFF0FF
 #define REGISTER_ADDRESS_MASK		0b111
 
@@ -79,9 +82,10 @@ void opt_adc_init_config(void);
 void opt_adc_init_mode(void);
 void opt_adc_init_sync(uint8_t pair_num);
 
-void opt_adc_select_channel(uint8_t channel_num);
+void opt_adc_select_channel(uint8_t channel_num, uint8_t sign);
 void opt_adc_select_pga(uint8_t gain);
 void opt_adc_select_op_mode(uint8_t mode_bits);
+void opt_adc_select_differential(void);
 
 uint8_t opt_adc_num_reg_bytes(uint8_t register_addr);
 uint8_t opt_adc_gain_to_gain_bits(uint8_t gain);
@@ -96,7 +100,7 @@ void opt_adc_init(void);
 
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain);
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number);
-uint32_t opt_adc_read_channel(uint8_t channel_num);
+uint32_t opt_adc_read_sync(void);
 
 void opt_adc_read_all_regs(void);
 
