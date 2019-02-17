@@ -1,12 +1,14 @@
-#ifndef F_CPU
-#define F_CPU 8e6UL
-#endif
-
 #include <uart/uart.h>
 #include <can/data_protocol.h>
 #include <stdint.h>
-#include <util/delay.h>
+#include <utilities/utilities.h>
 #include "../../src/optical_adc.h"
+#include "../../src/pwm.h"
+#include "../../src/syncdemod.h"
+
+#define CH5_EN_PORT     PORTC 
+#define CH5_EN_DDR      DDRC    
+#define CH5_EN          PIN2
 
 int main(void){
     init_uart();
@@ -15,8 +17,18 @@ int main(void){
     init_spi();
     print("SPI initialized\n");
 
+    init_cs(CH5_EN, &CH5_EN_DDR);
+    set_cs_high(CH5_EN, &CH5_EN_PORT);
+
     opt_adc_init();
     print("Optical ADC initialized\n");
+
+    init_pwm_16bit (0, 0xF7, 0x7B);
+    print("16-bit PWN initialized\n");
+
+    syncdemod_init();
+    syncdemod_enable_rclk(SD4_CS_PIN);
+    opt_adc_enable_mux(2);
 
     print("\nStarting test\n\n");
 

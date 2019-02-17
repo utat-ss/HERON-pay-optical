@@ -77,9 +77,9 @@ void opt_adc_init_config(void) {
     // Enable unipolar (positive voltage) mode
     // Set gain to 0b000 (PGA = 1)
     // Pseudo bit = 1
-    config = config | CONFIG_PSEUDO;
-    config = config | CONFIG_UNIPOLAR;
     config = config & CONFIG_MASK;
+    config = config | CONFIG_PSEUDO_ON;
+    config = config | CONFIG_UNIPOLAR;
 
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
@@ -90,31 +90,35 @@ void opt_adc_init_config(void) {
 // pair_num 2 = AIN9+ve, AIN10-ve
 // pair_num 3 = AIN11+ve, AIN12-ve
 void opt_adc_init_sync(uint8_t pair_num){
-    uint32_t channel_pos, channel_neg = 0;
-    if (pair_num == 0){
-        channel_pos = 5;
-        channel_pos = 6;
+    uint32_t channel_pos = 0, channel_neg = 0;
+
+    switch(pair_num){
+        case 0:
+            channel_pos = 5;
+            channel_neg = 6;
+            break;
+        case 1:
+            channel_pos = 7;
+            channel_neg = 8;
+            break;
+        case 2:
+            channel_pos = 9;
+            channel_neg = 10;
+            break;
+        case 3:
+            channel_pos = 11;
+            channel_neg = 12;
+            break;
     }
 
-    else if (pair_num == 1){
-        channel_pos = 7;
-        channel_pos = 8;
-    }
-
-    else if (pair_num == 2){
-        channel_pos = 9;
-        channel_pos = 10;
-    }
-
-    else if (pair_num == 3){
-        channel_pos = 11;
-        channel_pos = 12;
-    }
+    opt_adc_select_differential();
 
     opt_adc_select_channel(channel_pos, 1);
     opt_adc_select_channel(channel_neg, 0);
 
     opt_adc_select_op_mode(MODE_CONT_CONV);
+
+    _delay_ms(75);  // equivalent to about 60,000 timeout cycles
 
     //wait 4 master clock cycles (1us) for synchronization
     // (p. 36)
@@ -185,10 +189,10 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     set_cs_high(CS_PIN, &CS_PORT);
 }
 
-void opt_adc_select_channel(uint8_t channel_num, bool sign) {
+void opt_adc_select_channel(uint8_t channel_num, uint8_t sign) {
     // Sets the configuration register's bits for the specified ADC input channel.
     // channel_num must be between 1 and 16
-    // accepts 1, -1 for +/- sign, uni-polar is always +, differential requires + and - (p. 26)
+    // accepts 1, 0 for +/- sign, uni-polar is always +, differential requires + and - (p. 26)
 
     // Read the current register status
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
@@ -199,12 +203,13 @@ void opt_adc_select_channel(uint8_t channel_num, bool sign) {
         // Mask the channel bits and write new channel
         config &= CHANNEL_MASK_POS;
         config |= ((uint32_t) channel_bits) << 8;
+        print("AIN %d set to positive\n", channel_num);
     }
     else{ // -ve
         uint8_t channel_bits = (channel_num -1);
-        // Mask the channel bits and write new channel
         config &= CHANNEL_MASK_NEG;
         config |= ((uint32_t) channel_bits) << 8;
+        print("AIN %d set to negative\n", channel_num);
     }
 
     // Write the new config register value
@@ -245,6 +250,20 @@ void opt_adc_select_op_mode(uint8_t mode_bits) {
     opt_adc_write_reg(MODE_ADDR, mode_reg);
 }
 
+//sets pseudo bit to 0 for differential input
+void opt_adc_select_differential(void){
+    // Read from mode register
+    uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
+
+    // Enable differential output
+    // Enable unipolar (positive voltage) mode
+    // Pseudo bit = 0
+    config = config & CONFIG_MASK;
+    config = config | CONFIG_PSEUDO_ON;
+    config = config | CONFIG_UNIPOLAR;
+
+    opt_adc_write_reg(CONFIG_ADDR, config);
+}
 
 // See the single conversion mode, p.33
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
@@ -427,7 +446,7 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     return raw_data;
 }
 
-uint32_t opt_adc_read_channel(uint8_t channel_num){
+uint32_t opt_adc_read_sync(void){
     //set _SYNC high to begin conversion
     set_cs_high(SYNC_PIN, &SYNC_PORT);
 
@@ -435,6 +454,13 @@ uint32_t opt_adc_read_channel(uint8_t channel_num){
     uint16_t timeout = 1023;
     while (bit_is_set(MISO_PORT, MISO_PIN) && timeout > 0) {
         timeout--;
+    }
+
+    if (timeout == 0){
+        print("ERROR: TIMEOUT\n");
+    }
+    else{
+        print("Conversion successful\n");
     }
 
     //set _SYNC low to resycnhronize
