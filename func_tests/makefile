@@ -14,7 +14,7 @@ MCU = m32m1
 
 # Libraries from lib-common to link
 # May need to change this line
-LIB = -L ../../lib-common/lib -luart -lspi -lcan -lpex -lconversions -lutilities
+LIB = -L ../../lib-common/lib -luart -lspi -lcan -lpex -lconversions -lutilities -ldac
 
 # Computer port that the programmer is connected to
 # May need to change the PORT definition based on your OS and port

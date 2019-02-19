@@ -1,6 +1,6 @@
 /*
 DESCRIPTION: AD7194 ADC functions
-AUTHORS: Bruno Almeida, Dylan Vogel
+AUTHORS: Bruno Almeida, Dylan Vogel, Yong Da Li
 
 Datasheet: http://www.analog.com/media/en/technical-documentation/data-sheets/AD7194.pdf
 FAQ: http://www.analog.com/media/en/technical-documentation/frequently-asked-questions/AD719x_FAQ_Instru_Conv.pdf
@@ -21,6 +21,10 @@ TODO:
 * Add calibration function
 * Use 4 GPIO pins for mux A0, A1, A2, EN
 * Switch GPIO outputs to mux when appropriate, create function
+
+* create raw_data to actual voltage conversion function
+* decrease settling time of ADC (to get faster read speed, current ~33ms)
+*       - consider various filtering options on ADC
 */
 
 #include "optical_adc.h"
@@ -75,22 +79,29 @@ void opt_adc_init_config(void) {
 
     // Enable pseudo-differential output
     // Enable unipolar (positive voltage) mode
-    // Set gain to 0b000 (PGA = 1)
+    // Set gain to 0b000 (PGA = 1), by CONFIG_MASK
     // Pseudo bit = 1
     config = config & CONFIG_MASK;
     config = config | CONFIG_PSEUDO_ON;
     config = config | CONFIG_UNIPOLAR;
 
+    //set gain to 1
+    opt_adc_select_pga(1);
+
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
+
 
 // Initializes continous sync mode
 // pair_num 0 = AIN5+ve, AIN6-ve
 // pair_num 1 = AIN7+ve, AIN8-ve
 // pair_num 2 = AIN9+ve, AIN10-ve
 // pair_num 3 = AIN11+ve, AIN12-ve
+// pair_num 4 = AIN15+ve, AIN16-ve
 void opt_adc_init_sync(uint8_t pair_num){
     uint32_t channel_pos = 0, channel_neg = 0;
+
+    opt_adc_select_differential();
 
     switch(pair_num){
         case 0:
@@ -109,9 +120,10 @@ void opt_adc_init_sync(uint8_t pair_num){
             channel_pos = 11;
             channel_neg = 12;
             break;
+        case 4:
+            channel_pos = 15;
+            channel_neg = 16;
     }
-
-    opt_adc_select_differential();
 
     opt_adc_select_channel(channel_pos, 1);
     opt_adc_select_channel(channel_neg, 0);
@@ -128,6 +140,7 @@ void opt_adc_init_sync(uint8_t pair_num){
     //some time to read instructions anyway
     //_delay_us(1);
 }
+
 
 uint32_t opt_adc_read_reg(uint8_t register_addr) {
     // Read the current state of the specified ADC register.
@@ -189,6 +202,7 @@ void opt_adc_write_reg(uint8_t register_addr, uint32_t data) {
     set_cs_high(CS_PIN, &CS_PORT);
 }
 
+
 void opt_adc_select_channel(uint8_t channel_num, uint8_t sign) {
     // Sets the configuration register's bits for the specified ADC input channel.
     // channel_num must be between 1 and 16
@@ -229,7 +243,7 @@ void opt_adc_select_pga(uint8_t gain) {
 
     // Clear gain bits and set
 //    config_data &= 0xfffff8;
-    config_data &= CONFIG_MASK;
+    config_data &= PGA_MASK;
     config_data |= gain_bits;
 
     // Write to configuration register
@@ -250,20 +264,23 @@ void opt_adc_select_op_mode(uint8_t mode_bits) {
     opt_adc_write_reg(MODE_ADDR, mode_reg);
 }
 
-//sets pseudo bit to 0 for differential input
+
+// sets pseudo bit to 0 for differential input
+// turns on bipolar input mode --> bit = 0
 void opt_adc_select_differential(void){
     // Read from mode register
     uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
     // Enable differential output
-    // Enable unipolar (positive voltage) mode
+    // Enable bipolar mode
     // Pseudo bit = 0
     config = config & CONFIG_MASK;
-    config = config | CONFIG_PSEUDO_ON;
-    config = config | CONFIG_UNIPOLAR;
+    config = config & CONFIG_PSEUDO_OFF;
+    config = config & CONFIG_BIPOLAR;
 
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
+
 
 // See the single conversion mode, p.33
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
@@ -394,6 +411,7 @@ void opt_adc_disable_mux(void) {
     opt_adc_write_reg(GPOCON_ADDR, gpocon);
 }
 
+
 // Reads 24 bits of raw data from the specified field, using the system of 5
 // multiplexors with 8 pins each
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
@@ -446,13 +464,55 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     return raw_data;
 }
 
+
+// reads continuous conversion mode, but without synchronization
+// make sure operation mode is set to MODE_CONT_CONV before calling
+uint32_t opt_adc_read_cont_conv(void){
+    //begin communication
+    set_cs_low(CS_PIN, &CS_PORT);
+
+    uint16_t timeout = 65535;
+    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
+        timeout--;
+    }
+
+    print("Waited for %u cycles\n", 65535 - timeout);
+    if (timeout == 0) {
+        print("ERROR: TIMEOUT\n");
+    } else {
+        print("Conversion successful\n");
+    }
+
+    // Read back the conversion result
+    return opt_adc_read_reg(DATA_ADDR);
+}
+
+
+// reads continuous conversion mode with synchronziation
+// make sure operation mode is set to MODE_CONT_CONV before calling
+
+//to do:
+// entire read_sync function takes about 10ms (this delay) + 23ms (timeout) ~= 33ms
+// need to make settling time of ADC faster
+// consider the many filtering options available on ADC
 uint32_t opt_adc_read_sync(void){
-    //set _SYNC high to begin conversion
+    //set _SYNC high to begin conversion, resynchronize
     set_cs_high(SYNC_PIN, &SYNC_PORT);
+    _delay_ms(10);
+
+    /*FAQ p.10
+    "the user can take CS low, initiate the single conversion and then take CS high again...
+    When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
+
+    Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
+    Must set _CS_ low first for this to work
+    */
+
+    set_cs_low(CS_PIN, &CS_PORT);
 
     //wait until conversion finishes, signalled by _RDY going low
-    uint16_t timeout = 1023;
-    while (bit_is_set(MISO_PORT, MISO_PIN) && timeout > 0) {
+    uint16_t timeout = 65535;
+    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
         timeout--;
     }
 
@@ -463,12 +523,13 @@ uint32_t opt_adc_read_sync(void){
         print("Conversion successful\n");
     }
 
+    print("time: %d\n", timeout);
+
     //set _SYNC low to resycnhronize
     set_cs_low(SYNC_PIN, &SYNC_PORT);
 
     return opt_adc_read_reg(DATA_ADDR);
 }
-
 
 // Reads the prints out the values of all registers
 // TODO - comment out this function so the constant strings don't waste memory
