@@ -44,9 +44,6 @@ void opt_adc_init(void){
 
     opt_adc_reset();
 
-    // opt_adc_write_reg(CONFIG_ADDR, CONFIG_DEFAULT);
-    // "Continuous conversion is the default power-up mode." (p. 32)
-
     // GPOCON register - enable 4 GPIO outputs
     // _EN_ = 1, A2/A1/A0 = 0
     opt_adc_write_reg(GPOCON_ADDR, GPOCON_SETTING);
@@ -91,18 +88,32 @@ void opt_adc_init_config(void) {
     opt_adc_write_reg(CONFIG_ADDR, config);
 }
 
+// sets pseudo bit to 0 for differential input
+// turns on bipolar input mode --> bit = 0
+void opt_adc_select_differential(void){
+    // Read from mode register
+    uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
 
-// Initializes continous sync mode
-// pair_num 0 = AIN5+ve, AIN6-ve
-// pair_num 1 = AIN7+ve, AIN8-ve
-// pair_num 2 = AIN9+ve, AIN10-ve
-// pair_num 3 = AIN11+ve, AIN12-ve
-// pair_num 4 = AIN15+ve, AIN16-ve
+    // Enable differential output
+    // Enable bipolar mode
+    // Pseudo bit = 0
+    config = config & CONFIG_MASK;
+    config = config & CONFIG_PSEUDO_OFF;
+    config = config & CONFIG_BIPOLAR;
+
+    opt_adc_write_reg(CONFIG_ADDR, config);
+}
+
+
+// Initializes the ADC for synchronous reading
 void opt_adc_init_sync(uint8_t pair_num){
-    uint32_t channel_pos = 0, channel_neg = 0;
+    uint8_t channel_pos = 0, channel_neg = 0;
 
-    opt_adc_select_differential();
-
+    // pair_num 0 = AIN5+ve, AIN6-ve
+    // pair_num 1 = AIN7+ve, AIN8-ve
+    // pair_num 2 = AIN9+ve, AIN10-ve
+    // pair_num 3 = AIN11+ve, AIN12-ve
+    // pair_num 4 = AIN15+ve, AIN16-ve
     switch(pair_num){
         case 0:
             channel_pos = 5;
@@ -125,20 +136,15 @@ void opt_adc_init_sync(uint8_t pair_num){
             channel_neg = 16;
     }
 
+    opt_adc_select_differential();
+
     opt_adc_select_channel(channel_pos, 1);
     opt_adc_select_channel(channel_neg, 0);
 
     opt_adc_select_op_mode(MODE_CONT_CONV);
-
-    _delay_ms(75);  // equivalent to about 60,000 timeout cycles
-
-    //wait 4 master clock cycles (1us) for synchronization
-    // (p. 36)
     set_cs_low(SYNC_PIN, &SYNC_PORT);
 
-    //probably don't need the 1us delay, since 32m1 takes
-    //some time to read instructions anyway
-    //_delay_us(1);
+    _delay_ms(75);  // equivalent to about 60,000 timeout cycles
 }
 
 
@@ -169,7 +175,6 @@ uint32_t opt_adc_read_reg(uint8_t register_addr) {
     set_cs_high(CS_PIN, &CS_PORT);
 
     // print("Read register data: %06lX\n", data);
-
     return data;
 }
 
@@ -265,23 +270,6 @@ void opt_adc_select_op_mode(uint8_t mode_bits) {
 }
 
 
-// sets pseudo bit to 0 for differential input
-// turns on bipolar input mode --> bit = 0
-void opt_adc_select_differential(void){
-    // Read from mode register
-    uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
-
-    // Enable differential output
-    // Enable bipolar mode
-    // Pseudo bit = 0
-    config = config & CONFIG_MASK;
-    config = config & CONFIG_PSEUDO_OFF;
-    config = config & CONFIG_BIPOLAR;
-
-    opt_adc_write_reg(CONFIG_ADDR, config);
-}
-
-
 // See the single conversion mode, p.33
 uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     // Reads 24 bit raw data from the specified ADC channel.
@@ -321,6 +309,70 @@ uint32_t opt_adc_read_channel_raw_data(uint8_t channel_num, uint8_t gain) {
     }
 
     // Read back the conversion result
+    return opt_adc_read_reg(DATA_ADDR);
+}
+
+// reads continuous conversion mode, but without synchronization
+// make sure operation mode is set to MODE_CONT_CONV before calling
+uint32_t opt_adc_read_cont_conv(void){
+    //begin communication
+    set_cs_low(CS_PIN, &CS_PORT);
+
+    uint16_t timeout = 65535;
+    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
+        timeout--;
+    }
+
+    //print("Waited for %u cycles\n", 65535 - timeout);
+    if (timeout == 0) {
+        print("ERROR: TIMEOUT\n");
+    } else {
+        print("Conversion successful\n");
+    }
+
+    // Read back the conversion result
+    return opt_adc_read_reg(DATA_ADDR);
+}
+
+
+// reads continuous conversion mode with synchronziation
+// make sure operation mode is set to MODE_CONT_CONV before calling
+
+//to do:
+// entire read_sync function takes about 10ms (this delay) + 23ms (timeout) ~= 33ms
+// need to make settling time of ADC faster
+// consider the many filtering options available on ADC
+uint32_t opt_adc_read_sync(void){
+    //set _SYNC high to begin conversion, resynchronize
+    set_cs_high(SYNC_PIN, &SYNC_PORT);
+    _delay_ms(10);
+
+    /*FAQ p.10
+    "the user can take CS low, initiate the single conversion and then take CS high again...
+    When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
+
+    Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
+    Must set _CS_ low first for this to work
+    */
+
+    set_cs_low(CS_PIN, &CS_PORT);
+
+    //wait until conversion finishes, signalled by _RDY going low
+    uint16_t timeout = 65535;
+    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
+        timeout--;
+    }
+
+    //print("Waited for %u cycles\n", 65535 - timeout);
+    if (timeout == 0){
+        print("ERROR: TIMEOUT\n");
+    } else {
+        print("Conversion successful\n");
+    }
+
+    //set _SYNC low to resycnhronize
+    set_cs_low(SYNC_PIN, &SYNC_PORT);
+
     return opt_adc_read_reg(DATA_ADDR);
 }
 
@@ -462,73 +514,6 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     opt_adc_disable_mux();
 
     return raw_data;
-}
-
-
-// reads continuous conversion mode, but without synchronization
-// make sure operation mode is set to MODE_CONT_CONV before calling
-uint32_t opt_adc_read_cont_conv(void){
-    //begin communication
-    set_cs_low(CS_PIN, &CS_PORT);
-
-    uint16_t timeout = 65535;
-    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
-        timeout--;
-    }
-
-    print("Waited for %u cycles\n", 65535 - timeout);
-    if (timeout == 0) {
-        print("ERROR: TIMEOUT\n");
-    } else {
-        print("Conversion successful\n");
-    }
-
-    // Read back the conversion result
-    return opt_adc_read_reg(DATA_ADDR);
-}
-
-
-// reads continuous conversion mode with synchronziation
-// make sure operation mode is set to MODE_CONT_CONV before calling
-
-//to do:
-// entire read_sync function takes about 10ms (this delay) + 23ms (timeout) ~= 33ms
-// need to make settling time of ADC faster
-// consider the many filtering options available on ADC
-uint32_t opt_adc_read_sync(void){
-    //set _SYNC high to begin conversion, resynchronize
-    set_cs_high(SYNC_PIN, &SYNC_PORT);
-    _delay_ms(10);
-
-    /*FAQ p.10
-    "the user can take CS low, initiate the single conversion and then take CS high again...
-    When CS is taken high, the DOUT/RDY pin is tristated. Therefore, the DOUT/RDY pin will not indicate the end of the conversion."
-
-    Wait until the conversion finishes, signalled by (DOUT/_RDY_/MISO) going low
-    Must set _CS_ low first for this to work
-    */
-
-    set_cs_low(CS_PIN, &CS_PORT);
-
-    //wait until conversion finishes, signalled by _RDY going low
-    uint16_t timeout = 65535;
-    while (bit_is_set(PINB, MISO_PIN) && timeout > 0) {
-        timeout--;
-    }
-
-    if (timeout == 0){
-        print("ERROR: TIMEOUT\n");
-    }
-    else{
-        print("Conversion successful\n");
-    }
-
-    print("time: %d\n", timeout);
-
-    //set _SYNC low to resycnhronize
-    set_cs_low(SYNC_PIN, &SYNC_PORT);
-
-    return opt_adc_read_reg(DATA_ADDR);
 }
 
 // Reads the prints out the values of all registers
