@@ -28,7 +28,6 @@ TODO:
 */
 
 #include "optical_adc.h"
-#include "syncdemod.h"
 
 
 void opt_adc_init(void){
@@ -49,9 +48,9 @@ void opt_adc_init(void){
     opt_adc_write_reg(GPOCON_ADDR, GPOCON_SETTING);
 
     opt_adc_init_config();
-    // opt_adc_init_mode();
+    opt_adc_init_mode();
     opt_adc_select_op_mode(MODE_POWER_DOWN);
-    syncdemod_init();
+    //syncdemod_init();
 }
 
 
@@ -72,12 +71,13 @@ void opt_adc_reset(void) {
 
 // Initializes configuration register
 void opt_adc_init_config(void) {
-    uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
-
+    //uint32_t config = opt_adc_read_reg(CONFIG_ADDR);
+    uint32_t config = CONFIG_DEFAULT;
     // Enable pseudo-differential output
     // Enable unipolar (positive voltage) mode
     // Set gain to 0b000 (PGA = 1), by CONFIG_MASK
     // Pseudo bit = 1
+
     config = config & CONFIG_MASK;
     config = config | CONFIG_PSEUDO_ON;
     config = config | CONFIG_UNIPOLAR;
@@ -86,6 +86,12 @@ void opt_adc_init_config(void) {
     opt_adc_select_pga(1);
 
     opt_adc_write_reg(CONFIG_ADDR, config);
+}
+
+void opt_adc_init_mode(void){
+    uint32_t mode = MODE_DEFAULT;
+
+    opt_adc_write_reg(MODE_ADDR, mode);
 }
 
 // sets pseudo bit to 0 for differential input
@@ -142,9 +148,10 @@ void opt_adc_init_sync(uint8_t pair_num){
     opt_adc_select_channel(channel_neg, 0);
 
     opt_adc_select_op_mode(MODE_CONT_CONV);
-    set_cs_low(SYNC_PIN, &SYNC_PORT);
+    // equivalent to about 60,000 timeout cycles
+    _delay_ms(75);
 
-    _delay_ms(75);  // equivalent to about 60,000 timeout cycles
+    set_cs_low(SYNC_PIN, &SYNC_PORT);
 }
 
 
@@ -345,7 +352,7 @@ uint32_t opt_adc_read_cont_conv(void){
 uint32_t opt_adc_read_sync(void){
     //set _SYNC high to begin conversion, resynchronize
     set_cs_high(SYNC_PIN, &SYNC_PORT);
-    _delay_ms(10);
+    _delay_ms(300);
 
     /*FAQ p.10
     "the user can take CS low, initiate the single conversion and then take CS high again...
@@ -466,6 +473,7 @@ void opt_adc_disable_mux(void) {
 
 // Reads 24 bits of raw data from the specified field, using the system of 5
 // multiplexors with 8 pins each
+/*
 uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
     uint8_t group = field_number / 8;
     uint8_t address = field_number % 8;
@@ -500,7 +508,6 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
             sd_cs_pin = SD1_CS_PIN;
             break;
     }
-
     // Enable the mux for the appropriate address
     // (this should turn on the LED and enable the amplifier)
     opt_adc_enable_mux(address);
@@ -515,6 +522,7 @@ uint32_t opt_adc_read_field_raw_data(uint8_t field_number) {
 
     return raw_data;
 }
+*/
 
 // Reads the prints out the values of all registers
 // TODO - comment out this function so the constant strings don't waste memory

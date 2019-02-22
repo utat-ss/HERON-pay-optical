@@ -44,30 +44,46 @@
 TODO - check configuration register bits:
 * bit[23] to 0 - chop bit
 * bit[20] set to 0 — ref select
-* bit[18] should be 1 (psuedo bit)
+* bit[18] should be 1 (psuedo bit) for psuedo differential
 * bit[16] set to 0 — temp bit
 * bit[15:8] – channel select
 * bit[7] set to 0 – burnout
 * bit[6] set to 0 - ref detect
-* bit[4] set to 0 – buffer, might want to enable
+* bit[4] set to 1 – buffer, might want to enable
 * bit[3] set to 1 - unipolar or bipolar (1 for unipolar)
 * bit[2:0] set to 000 - programmable gain
 */
-#define CONFIG_PSEUDO_ON       		(1UL << 18)
-#define CONFIG_PSEUDO_OFF     		~(1UL << 18)
-#define CONFIG_UNIPOLAR     		(1UL << 3)
-#define CONFIG_BIPOLAR     			~(1UL << 3)
+#define CONFIG_DEFAULT              0x040008
+#define CONFIG_PSEUDO_ON       		  (1UL << 18)
+#define CONFIG_PSEUDO_OFF     		  ~(1UL << 18)
+#define CONFIG_UNIPOLAR     		    (1UL << 3)
+#define CONFIG_BIPOLAR     			    ~(1UL << 3)
 
 // configuration data
-#define GPOCON_SETTING				0b00111000
-#define GPOCON_MASK					0xF0
-#define CONFIG_MASK					0xFFFBFFF0 //clears pseudo, unipolar, and pga
-#define PGA_MASK					0xFFFFF8
-#define MODE_MASK					0x1FFFFF
+#define GPOCON_SETTING				      0b00111000
+#define GPOCON_MASK					        0xF0
+#define CONFIG_MASK					        0xFFFBFFF0 //clears pseudo, unipolar, and pga
+#define PGA_MASK					          0xFFFFF8
+#define MODE_MASK					          0x1FFFFF
 #define CHANNEL_MASK_POS            0xFFFF0FFF
-#define PSEUDO_MASK					0xFFFBFFFF
+#define PSEUDO_MASK					        0xFFFBFFFF
 #define CHANNEL_MASK_NEG            0xFFFFF0FF
-#define REGISTER_ADDRESS_MASK		0b111
+#define REGISTER_ADDRESS_MASK		    0b111
+
+/* Default ADC mode
+  bit[23:21] 000 - mode select bits
+  bit[20] 0 - disable transmission of status register
+  bit[19:18] 10 - use internal clock and tristate MCLK2
+  bit[17:16] 00 - disable fast settling
+  bit[15] 0 - use sinc4 filter, which gives less noise at higher data rates
+  bit[13] 0 - disable parity checking (seems legit)
+  bit[12] 0 - disable CLK divide by 2
+  bit[11] 1 - enable single cycle settling (slow, but accurate)
+  bit[10] 1 - enable 60 hz rejection
+  bit[9:0] 0x00 0110 0000 - set FS to 1 for fastest settling time, most noise
+*/
+
+#define MODE_DEFAULT                0x080C60
 
 // Operating mode select bits  (p. 21-23, 37)
 #define MODE_CONT_CONV              0b000   	// continuous conversion
