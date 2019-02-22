@@ -17,6 +17,7 @@ void sd_nop(void) { }
 sd_fn_t sd_callbacks[4] = {sd_nop, sd_nop, sd_nop, sd_nop};
 
 void syncdemod_init() {
+    // PLEASE ENSURE YOU ACTUALLY SUPPLY A CLOCK TO THE SYNCDEMOD BEFORE CALLING
     uint8_t sd_cs_pin;
     // SD CS's are PC3 to PC6
     for (int i = 0; i < 4; i++){
@@ -24,6 +25,9 @@ void syncdemod_init() {
         // initialize the SPI pin behaviour
         init_cs(sd_cs_pin, &SD_CS_DDR);
         set_cs_high(sd_cs_pin, &SD_CS_PORT);
+        // enable the external clock input
+        // THIS WILL CAUSE WEIRD STUFF IF YOU DON'T SUPPLY A CLOCK
+        syncdemod_enable_external_clk(sd_cs_pin);
         // reset the synchronous demadulator
         syncdemod_reset(sd_cs_pin);
         // Write the default configuration register
@@ -32,8 +36,8 @@ void syncdemod_init() {
         syncdemod_disable_rclk(sd_cs_pin);
         // write the default demod control, which controls RCLK pin behaviour
         syncdemod_write_register(sd_cs_pin, SD_DEMOD_CONTROL_ADDR, SD_DEMOD_CONTROL_DEFAULT);
-        // enable the external clock input
-        syncdemod_enable_external_clk(sd_cs_pin);
+        // disable the synco output
+        syncdemod_write_synco(sd_cs_pin, 0, SD_SYNCO_POLARITY_DEFAULT, SD_SYNCO_EDGE_DEFAULT);
     }
 }
 
@@ -180,36 +184,35 @@ void syncdemod_toggle_core_reset(uint8_t sd_cs_pin){
 Initialize interrupt pins INT0-INT3 and set callback functions
 */
 void syncdemod_init_interrupt(sd_fn_t f0, sd_fn_t f1, sd_fn_t f2, sd_fn_t f3) {
-    // set behavior of all interrupts to trigger on rising edge, pg 71
-    EICRA = 0xFF;
-    // enable external interrupt 0-3
-    EIMSK |= 0x0F;
-    // enable global interrupts
-    sei();
-
     // set callback functions
     sd_callbacks[0] = f0;
     sd_callbacks[1] = f1;
     sd_callbacks[2] = f2;
     sd_callbacks[3] = f3;
+
+    // set behavior of all interrupts to trigger on rising edge, pg 84
+    EICRA = 0xFF;
+    // enable external interrupt 0-3, pg 86
+    EIMSK |= 0x0F;
+    // enable global interrupts
+    sei();
 }
 
 /*
+Interrupt service routines which get called when an interrupt occurs on the
+corresponding pin.
 */
 ISR(INT0_vect) {
     sd_callbacks[0]();
 }
 
-
 ISR(INT1_vect) {
     sd_callbacks[1]();
 }
 
-
 ISR(INT2_vect) {
     sd_callbacks[2]();
 }
-
 
 ISR(INT3_vect) {
     sd_callbacks[3]();

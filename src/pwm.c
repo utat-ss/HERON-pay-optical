@@ -124,5 +124,19 @@ void init_pwm_16bit(uint8_t prescaler, uint16_t top, uint16_t duty_cycle)
     PRR &= 0xEF; //disable power reduction to the timer
 
     DDRC |= _BV(0x01); //set the data direction port to output
+}
 
+double return_pwm_freq_16bit(uint8_t prescaler, uint16_t top){
+  //Frequency = 8/(prescaler * (top + 1)) [Mhz]
+  double frequency = (double)F_CPU / 1000;
+  frequency /= ((double)prescaler * (top + 1));
+
+  return frequency;
+}
+
+double return_pwm_duty_16bit(uint16_t top, uint16_t duty_cycle){
+  // duty_cycle/top
+  double duty = (double)duty_cycle / (double)top;
+
+  return duty;
 }

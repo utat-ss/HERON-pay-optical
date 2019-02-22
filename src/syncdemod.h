@@ -4,12 +4,7 @@
 #include <uart/uart.h>
 #include <stdint.h>
 #include <spi/spi.h>
-
-#ifndef F_CPU
-#define F_CPU 8000000
-#endif
-
-#include <util/delay.h>
+#include <utilities/utilities.h>
 
 #define SD_CS_PORT  PORTC
 #define SD_CS_DDR   DDRC
@@ -37,6 +32,11 @@
 // bit 3 == 1 sends RCLK to output
 // bit[2:0] == 010 sets VOCM to VDD/2 fast settling mode
 #define SD_DEMOD_CONTROL_DEFAULT    0x1A
+
+// default edge position of the synco output, see fig 24 on pg 14 of the datasheet
+#define SD_SYNCO_EDGE_DEFAULT          0b1101
+// default polarity is non-inverted
+#define SD_SYNCO_POLARITY_DEFAULT      0
 
 // define function pointer type
 typedef void(*sd_fn_t)(void);
