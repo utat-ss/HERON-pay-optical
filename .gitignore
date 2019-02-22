@@ -9,3 +9,8 @@
 
 # Xcode files
 xcuserdata
+
+# Eclipse files
+.project
+.cproject
+.settings
