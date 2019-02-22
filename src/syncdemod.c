@@ -174,10 +174,6 @@ void syncdemod_toggle_core_reset(uint8_t sd_cs_pin){
             reset_state = 0x00;
     }
     syncdemod_write_register(sd_cs_pin, SD_CORE_RESET_ADDR, reset_state);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Wrote initialization for interrupts and test file.
 }
 
 /*
@@ -217,9 +213,3 @@ ISR(INT2_vect) {
 ISR(INT3_vect) {
     sd_callbacks[3]();
 }
-<<<<<<< HEAD
-=======
-}
->>>>>>> DOESN'T WORK: adc sync init and read
-=======
->>>>>>> Wrote initialization for interrupts and test file.
