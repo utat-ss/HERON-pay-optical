@@ -10,7 +10,7 @@
 */
 
 #include "syncdemod.h"
-#include "uart/uart.h"
+#include <uart/uart.h>
 
 // default callback
 void sd_nop(void) { }

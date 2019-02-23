@@ -126,17 +126,23 @@ void init_pwm_16bit(uint8_t prescaler, uint16_t top, uint16_t duty_cycle)
     DDRC |= _BV(0x01); //set the data direction port to output
 }
 
+// return frequency calculation in KHz
 double return_pwm_freq_16bit(uint8_t prescaler, uint16_t top){
-  //Frequency = 8/(prescaler * (top + 1)) [Mhz]
+  //Frequency = F_CPU/(prescaler * (top + 1)) [Khz]
+  if (prescaler == 0){
+    prescaler = 1;
+  }
   double frequency = (double)F_CPU / 1000;
   frequency /= ((double)prescaler * (top + 1));
 
   return frequency;
 }
 
+// return duty cycle calculation in percent
 double return_pwm_duty_16bit(uint16_t top, uint16_t duty_cycle){
   // duty_cycle/top
   double duty = (double)duty_cycle / (double)top;
+  duty *= 100;
 
   return duty;
 }
