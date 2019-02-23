@@ -3,12 +3,12 @@ DESCRIPTION: Mappings for LEDs on PAY-LED boards
 AUTHOR: Yong Da LI
 
 Three things need to be linked:
-1. (microfluidics) channel number pay-ssm board, ex. A1_2
+1. (microfluidics) channel number on PAYY-SSM board, ex. A1_2
 2. left-right, top-down numbering of LEDs on the whole board, ex. 3rd LED from top left
 3. pin number of port expander (PEX) that actually turns on the LED
 
 There are 2 PEX's, each with 16 channels of output (32 "switches").
-There are combined 34 LED's on both pay-optical boards.
+There are combined 34 LED's on both pay-optical boards. *Actually 36 LED slots, but only 34 are populated --> 2 empty slots
 The "switch" (aka PEX pin) for the left-most and right-most channels are connected
 i.e. turning on the channel for the left-most LED also turns on the right-most channel.
     - this is PEX pin 2
@@ -48,18 +48,17 @@ optical_led.c accepts 2 input formats:
 #define PEXPIN_MASK     0b00011111 //leaves only pex pin --> zeros first 3 bits
 #define PEX_ADDR_MASK   0b11100000 //leaves only pex address --> zeros last 5 bits
 
-void init_opt_led(void);
-void opt_led_switch(pexpin_t pexpin, uint8_t turn_on);
+// top dir = PAY-SSM and PAY-OPTICAL's text is right-side up
+#define TOP_PEX_ADDR      0b110    // hardware set 0b110 = 3 is PAY-LED board that goes on top
+#define BOT_PEX_ADDR      0b010    // hardware set 0b010 = 2 is PAY-LED board that goes on top
 
-void opt_led_on(pexpin_t pexpin);
-void opt_led_off(pexpin_t pexpin);
+#define PEX_CS_PORT_PAY_OPT     PORTD
+#define PEX_CS_DDR_PAY_OPT      DDRD
+#define PEX_CS_PIN_PAY_OPT      PD5
 
-void opt_led_mf_on(char[] mf_channel);
-void opt_led_mf_off(char[] mf_channel);
-void opt_led_board_position_on(uint8_t pos);
-void opt_led_board_position_off(uint8_t pos);
-
-pexpin_t opt_led_convert_mf(char[] mf_channel);
+#define PEX_RST_PORT_PAY_OPT    PORTD
+#define PEX_RST_DDR_PAY_OPT     DDRD
+#define PEX_RST_PIN_PAY_OPT     PD7
 
 /*
 ADC on pay-optical board has 16 input channels
@@ -128,7 +127,7 @@ typedef enum {
 
 // 5th index contains channel number of the 5th microfluidics channel
 // physically on the pay-led board
-pexpin_t [] mf_channel_switcher = {
+pexpin_t mf_channel_switcher [] = {
     //top left of pay-led board
     A2_4,
     A2_1,
@@ -172,4 +171,13 @@ pexpin_t [] mf_channel_switcher = {
     A4_5,
     A5_2,
     NO_CHANNEL,
-}
+};
+
+void init_opt_led(void);
+void opt_led_switch(pexpin_t pexpin, uint8_t turn_on);
+
+void opt_led_on(pexpin_t pexpin);
+void opt_led_off(pexpin_t pexpin);
+
+void opt_led_board_position_on(uint8_t pos);
+void opt_led_board_position_off(uint8_t pos);

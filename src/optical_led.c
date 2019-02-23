@@ -9,12 +9,10 @@ PEX datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf
 The PEX has 16 output channels. That means 2 of the LED will turn on together.
 *there's actually 36 LED slots, but only 34 are populated --> 2 empty slots 
 
-Accepts channel number (ex. A1_2) 
-    or 
-the physical location of the LED on the board.
-ex. 3rd from top left = 4
-ex. 1st on bottom row = 18
-
+Accepts input format:
+the physical location of the LED on the board, as uint8_t
+    ex. 3rd from top left = 4
+    ex. 1st on bottom row = 18
 
 LED clock frequency = ~504 Hz (504 + 1/31 Hz)
 PEX (port expander) with address 0b011 = 3 is on top edge of PAY-SSM
@@ -24,29 +22,36 @@ PEX (port expander) with address 0b010 = 2 is on bottom edge of PAY-SSM
     - mounted with text rightside up
 */
 
+#include "pwm.h"
 #include "optical_led.h"
 
 //only 1 PEX right now, need to implememt 2 PEX control
 //preamble for PEX
 pin_info_t cs = {
-    .port = &PEX_CS_PORT_PAY,
-    .ddr = &PEX_CS_DDR_PAY,
-    .pin = PEX_CS_PIN_PAY
+    .port = &PEX_CS_PORT_PAY_OPT,
+    .ddr = &PEX_CS_DDR_PAY_OPT,
+    .pin = PEX_CS_PIN_PAY_OPT
 };
 
 pin_info_t rst = {
-    .port = &PEX_RST_PORT_PAY,
-    .ddr = &PEX_RST_DDR_PAY,
-    .pin = PEX_RST_PIN_PAY
+    .port = &PEX_RST_PORT_PAY_OPT,
+    .ddr = &PEX_RST_DDR_PAY_OPT,
+    .pin = PEX_RST_PIN_PAY_OPT
 };
 
-pex_t pex = {
-    .addr = PEX_ADDR_PAY,
+pex_t top_pex = {
+    .addr = TOP_PEX_ADDR,
     .cs = &cs,
     .rst = &rst
 };
 
-char[4] mf_channel = "A2_4" // defaults to LED on top-left of pay-led
+pex_t bot_pex = {
+    .addr = BOT_PEX_ADDR,
+    .cs = &cs,
+    .rst = &rst
+};
+
+char mf_channel [4]= "A2_4"; // defaults to LED on top-left of pay-led
 
 /*
 output direction for GPIO ports
@@ -81,28 +86,29 @@ void init_opt_led(void){
 
     // desired freq = 504 Hz
     // 0.000504 MHz = 8 / ( [256] * ([30]+1) *  2) 
+    // actually 504 + 1/31 Hz
     init_pwm_8bit(3, 30);
 
     init_uart();
     init_spi();
-    init_pex(&pex2); //PEX that goes on lower side of PAY-SSM 
-    init_pex(&pex3); //PEX that goes on upper side of PAY-SSM (mounted with text upside-down)
+    init_pex(&top_pex); //PEX that goes on lower side of PAY-SSM 
+    init_pex(&bot_pex); //PEX that goes on upper side of PAY-SSM (mounted with text upside-down)
 
     // PEX2 - set bank A to output
     for (uint8_t i = 0; i<8; i++)
-        set_pex_pin_dir(&pex2, PEX_A, i, OUTPUT);
+        set_pex_pin_dir(&bot_pex, PEX_A, i, OUTPUT);
 
     // PEX2 - set bank B to output
     for (uint8_t i = 0; i<8; i++)
-        set_pex_pin_dir(&pex2, PEX_B, i, OUTPUT);
+        set_pex_pin_dir(&bot_pex, PEX_B, i, OUTPUT);
 
     // PEX3 - set bank A to output
     for (uint8_t i = 0; i<8; i++)
-        set_pex_pin_dir(&pex3, PEX_A, i, OUTPUT);
+        set_pex_pin_dir(&top_pex, PEX_A, i, OUTPUT);
 
     // PEX3 - set bank B to output
     for (uint8_t i = 0; i<8; i++)
-        set_pex_pin_dir(&pex3, PEX_B, i, OUTPUT);
+        set_pex_pin_dir(&top_pex, PEX_B, i, OUTPUT);
 
     // turn all LED's off, total of 36 LEDs 
     // *actually only 34 LEDs and 2 empty spots
@@ -125,7 +131,7 @@ void init_opt_led(void){
 void opt_led_switch(pexpin_t pexpin, uint8_t turn_on){
     uint8_t pex_addr = pexpin & PEX_ADDR_MASK;
     uint8_t pex_pin  = pexpin & PEXPIN_MASK;
-    pex_t* pex = NULL;
+    pex_t pex = top_pex;    // default to top board
 
     // (channels) 
     // pins 1-8 --> GPA, bank A
@@ -149,29 +155,21 @@ void opt_led_switch(pexpin_t pexpin, uint8_t turn_on){
     //pex_addr 0b011 = 3 --> pex on top of pay-ssm
     switch(pex_addr >> 5){
         case (0b010):
-            pex = pex2;
+            pex = bot_pex;
             break;
         case (0b011):
-            pex = pex3;
+            pex = top_pex;
             break;
     }
 
-    //(address of pex, bank A or B, led pin, 1 = high | 0 = low)
-    sex_pex_pin(&pex, bank, led, turn_on);
+    //(address of pex, bank A or B, pex pin, 1 = high | 0 = low)
+    set_pex_pin(&pex, bank, pex_pin, turn_on);
 }
 
 
 //turn on LED
 void opt_led_on(pexpin_t pexpin){
     opt_led_switch(pexpin, 1);
-}
-
-
-// accepts string of microfluidics channel number, ex. A1_2
-void opt_led_mf_on(char[] mf_channel){
-    pexpin_t pexpin = opt_led_convert_mf(mf_channel);
-
-    opt_led_on(pexpin);
 }
 
 
@@ -185,130 +183,17 @@ void opt_led_off(pexpin_t pexpin){
 // numbered left-to-right, top-down
 // *includes the blank LED slot with no actual LED (right end of pay-led board)
 void opt_led_board_position_on(uint8_t pos){
-    char[] mf_channel = mf_channel_switcher[pos];
-    pexpin_t pexpin = opt_led_convert_mf(mf_channel);
+    pexpin_t pexpin = mf_channel_switcher[pos];
 
     opt_led_on(pexpin);
 }
-
 
 
 // accepts physical position of LED on board (0 - 33, inclusive)
 // numbered left-to-right, top-down
 // *includes the blank LED slot with no actual LED (right end of pay-led board)
 void opt_led_board_position_off(uint8_t pos){
-    mf_channel = mf_channel_switcher[pos];
-    pexpin_t pexpin = opt_led_convert_mf(mf_channel);
+    pexpin_t pexpin = mf_channel_switcher[pos];
 
     opt_led_off(pexpin);
-}
-
-
-// accepts string of microfluidics channel number, ex. A1_2
-void opt_led_mf_off(char[] mf_channel){
-    pexpin_t pexpin = opt_led_convert_mf(mf_channel);
-
-    opt_led_off(pexpin);
-}
-
-
-// converts microfluidcs channel number (ex. A1_2) to pexpin_t
-pexpin_t opt_led_convert_mf(char[] mf_channel){
-    pexpin_t pexpin = A2_4; //default to LED on top left of board
-
-    switch(mf_channel){
-        //channel group 1
-        case "A1_1":
-            pexpin = A1_1;
-            break;
-        case "A1_2":
-            pexpin = A1_2;
-            break;
-        case "A1_3":
-            pexpin = A1_3;
-            break;
-        case "A1_4":
-            pexpin = A1_4;
-            break;
-        case "A1_5":
-            pexpin = A1_5;
-            break;
-        case "A1_6":
-            pexpin = A1_6;
-            break;
-        case "A1_7":
-            pexpin = A1_7;
-            break;
-
-        //channel group 2
-        case "A2_1":
-            pexpin = A2_1;
-            break;
-        case "A2_2":
-            pexpin = A2_2;
-            break;
-        case "A2_3":
-            pexpin = A2_3;
-            break;
-        case "A2_4":
-            pexpin = A2_4;
-            break;
-        case "A2_5":
-            pexpin = A2_5;
-            break;
-        case "A2_6":
-            pexpin = A2_6;
-            break;
-        case "A2_7":
-            pexpin = A2_7;
-            break;
-
-        //channel group 3
-        case "A3_1":
-            pexpin = A3_1;
-            break;
-        case "A3_2":
-            pexpin = A3_2;
-            break;
-        case "A3_3":
-            pexpin = A3_3;
-            break;
-        case "A3_4":
-            pexpin = A3_4;
-            break;
-        case "A3_5":
-            pexpin = A3_5;
-            break;
-        case "A3_6":
-            pexpin = A3_6;
-            break;
-        case "A3_7":
-            pexpin = A3_7;
-            break;
-
-        //channel group 4
-        case "A3_1":
-            pexpin = A3_1;
-            break;
-        case "A3_2":
-            pexpin = A3_2;
-            break;
-        case "A3_3":
-            pexpin = A3_3;
-            break;
-        case "A3_4":
-            pexpin = A3_4;
-            break;
-        case "A3_5":
-            pexpin = A3_5;
-            break;
-        case "A3_6":
-            pexpin = A3_6;
-            break;
-        case "A3_7":
-            pexpin = A3_7;
-            break;
-    }
-
-    return pexpin;
 }

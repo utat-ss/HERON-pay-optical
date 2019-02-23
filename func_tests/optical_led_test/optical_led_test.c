@@ -4,7 +4,7 @@ AUTHOR: Yong Da Li
 */
 
 #include "../../src/optical_led.h"
-#include <util.delay.h>
+#include <utilities/utilities.h>
 #include <uart/uart.h>
 #include <spi/spi.h>
 
