@@ -15,7 +15,7 @@ i.e. turning on the channel for the left-most LED also turns on the right-most c
 
 optical_led.c accepts 2 input formats:
 1. (microfluidics) channel number, written on the Pay-led board
-    string of channel number (ex "A1_2") maps to a PEX pin, using the struct enum
+    channel number (ex "A1_2") maps to a PEX pin, using the struct enum (pexpin_t datatype)
 
 2. physical location of LED, ex. 3rd from left
     [Use left to right, top-down numbering. Starting index is 0]
@@ -30,8 +30,8 @@ optical_led.c accepts 2 input formats:
     *but they are still counted in this numbering
 */
 
-#ifndef OPTICAL_ADC_H
-#define OPTICAL_ADC_H
+#ifndef OPTICAL_LED_H
+#define OPTICAL_LED_H
 #endif
 
 #include <pex/pex.h>
@@ -39,26 +39,20 @@ optical_led.c accepts 2 input formats:
 #include <uart/uart.h>
 #include <stdint.h>
 
-// 2 constants not actually used
-// freq is set by init_pwm_8bit()
-// duty cycle for 8-bit pwm is fixed at 50%
-#define PWM_LED_CLK     504 // 504 Hz
-#define DUTY_CYCLE      0.5 // 50% duty cycle
-
 #define PEXPIN_MASK     0b00011111 //leaves only pex pin --> zeros first 3 bits
 #define PEX_ADDR_MASK   0b11100000 //leaves only pex address --> zeros last 5 bits
 
-// top dir = PAY-SSM and PAY-OPTICAL's text is right-side up
-#define TOP_PEX_ADDR      0b110    // hardware set 0b110 = 3 is PAY-LED board that goes on top
+// top = PAY-SSM and PAY-OPTICAL's text is right-side up
+#define TOP_PEX_ADDR      0b011    // hardware set 0b110 = 3 is PAY-LED board that goes on top
 #define BOT_PEX_ADDR      0b010    // hardware set 0b010 = 2 is PAY-LED board that goes on top
 
 #define PEX_CS_PORT_PAY_OPT     PORTD
 #define PEX_CS_DDR_PAY_OPT      DDRD
-#define PEX_CS_PIN_PAY_OPT      PD5
+#define PEX_CS_PIN_PAY_OPT      PD1     // not actually PD5, schematics are wrong, we probed 32m1 against outgoing connector
 
 #define PEX_RST_PORT_PAY_OPT    PORTD
 #define PEX_RST_DDR_PAY_OPT     DDRD
-#define PEX_RST_PIN_PAY_OPT     PD7
+#define PEX_RST_PIN_PAY_OPT     PD5     // not actually PD7, schematics are wrong, we probed 32m1 against outgoing connector
 
 /*
 ADC on pay-optical board has 16 input channels
@@ -81,99 +75,64 @@ pair_num    (AIN+)    (AIN-)
 // __pex_address__|  ___5 bits for pin number(1-16)____   
 typedef enum {
     //channel number = PEX address | PEX pin number
-    A1_1 = 0b010<<5 | 3,
-    A1_2 = 0b010<<5 | 2,
-    A1_3 = 0b010<<5 | 1,
-    A1_4 = 0b010<<5 | 4,
-    A1_5 = 0b010<<5 | 8,
-    A1_6 = 0b010<<5 | 5,
-    A1_7 = 0b010<<5 | 7,
-    A1_8 = 0b010<<5 | 6,
+    A1_1 = BOT_PEX_ADDR<<5 | 3,
+    A1_2 = BOT_PEX_ADDR<<5 | 2,
+    A1_3 = BOT_PEX_ADDR<<5 | 1,
+    A1_4 = BOT_PEX_ADDR<<5 | 4,
+    A1_5 = BOT_PEX_ADDR<<5 | 8,
+    A1_6 = BOT_PEX_ADDR<<5 | 5,
+    A1_7 = BOT_PEX_ADDR<<5 | 7,
+    A1_8 = BOT_PEX_ADDR<<5 | 6,
 
-    A2_1 = 0b011<<5 | 1,
-    A2_2 = 0b011<<5 | 16,
-    A2_3 = 0b011<<5 | 15,
-    A2_4 = 0b011<<5 | 2,
-    A2_5 = 0b011<<5 | 12,
-    A2_6 = 0b011<<5 | 14,
-    A2_7 = 0b011<<5 | 11,
-    A2_8 = 0b011<<5 | 13,
+    A2_1 = TOP_PEX_ADDR<<5 | 1,
+    A2_2 = TOP_PEX_ADDR<<5 | 16,
+    A2_3 = TOP_PEX_ADDR<<5 | 15,
+    A2_4 = TOP_PEX_ADDR<<5 | 2,
+    A2_5 = TOP_PEX_ADDR<<5 | 12,
+    A2_6 = TOP_PEX_ADDR<<5 | 14,
+    A2_7 = TOP_PEX_ADDR<<5 | 11,
+    A2_8 = TOP_PEX_ADDR<<5 | 13,
 
-    A3_1 = 0b011<<5 | 10,
-    A3_2 = 0b011<<5 | 8,
-    A3_3 = 0b011<<5 | 7,
-    A3_4 = 0b011<<5 | 9,
-    A3_5 = 0b011<<5 | 3,
-    A3_6 = 0b011<<5 | 6,
-    A3_7 = 0b011<<5 | 4,
-    A3_8 = 0b011<<5 | 5,
+    A3_1 = TOP_PEX_ADDR<<5 | 10,
+    A3_2 = TOP_PEX_ADDR<<5 | 8,
+    A3_3 = TOP_PEX_ADDR<<5 | 7,
+    A3_4 = TOP_PEX_ADDR<<5 | 9,
+    A3_5 = TOP_PEX_ADDR<<5 | 3,
+    A3_6 = TOP_PEX_ADDR<<5 | 6,
+    A3_7 = TOP_PEX_ADDR<<5 | 4,
+    A3_8 = TOP_PEX_ADDR<<5 | 5,
 
-    A4_1 = 0b010<<5 | 11,
-    A4_2 = 0b010<<5 | 9,
-    A4_3 = 0b010<<5 | 10,
-    A4_4 = 0b010<<5 | 12,
-    A4_5 = 0b010<<5 | 16,
-    A4_6 = 0b010<<5 | 13,
-    A4_7 = 0b010<<5 | 15,
-    A4_8 = 0b010<<5 | 14,
+    A4_1 = BOT_PEX_ADDR<<5 | 11,
+    A4_2 = BOT_PEX_ADDR<<5 | 9,
+    A4_3 = BOT_PEX_ADDR<<5 | 10,
+    A4_4 = BOT_PEX_ADDR<<5 | 12,
+    A4_5 = BOT_PEX_ADDR<<5 | 16,
+    A4_6 = BOT_PEX_ADDR<<5 | 13,
+    A4_7 = BOT_PEX_ADDR<<5 | 15,
+    A4_8 = BOT_PEX_ADDR<<5 | 14,
 
-    A5_1 = 0b011<<5 | 2,
-    A5_2 = 0b010<<5 | 1,
+    A5_1 = TOP_PEX_ADDR<<5 | 2,
+    A5_2 = BOT_PEX_ADDR<<5 | 1,
 
     //no channel number is all 0
     NO_CHANNEL = 0,
 } pexpin_t;
 
+extern pex_t top_pex;
+extern pex_t bot_pex;
 
-// 5th index contains channel number of the 5th microfluidics channel
+
+// ith index contains channel number of the ith microfluidics channel
 // physically on the pay-led board
-pexpin_t mf_channel_switcher [] = {
-    //top left of pay-led board
-    A2_4,
-    A2_1,
-    A2_2,
-    A2_3,
-    A2_6,
-    A2_8,
-    A2_5,
-    A2_7,
-    A3_1,
-
-    //top right of pay-led board
-    A3_4,
-    A3_2,
-    A3_3,
-    A3_6,
-    A3_8,
-    A3_7,
-    A3_5,
-    A5_1,
-    NO_CHANNEL,
-
-    //bottom left of pay-led board
-    A1_3,
-    A1_2,
-    A1_1,
-    A1_4,
-    A1_6,
-    A1_8,
-    A1_7,
-    A1_5,
-    A4_2,
-
-    //bottom right of pay-led board
-    A4_3,
-    A4_1,
-    A4_4,
-    A4_6,
-    A4_8,
-    A4_7,
-    A4_5,
-    A5_2,
-    NO_CHANNEL,
-};
+extern pexpin_t mf_channel_switcher [];
 
 void init_opt_led(void);
+
+// mode 0 = output
+// mode 1 = input
+void opt_led_set_mode_by_chn_pos(uint8_t channel_num, uint8_t mode);
+void opt_led_set_mode(pexpin_t pexpin, uint8_t mode);
+
 void opt_led_switch(pexpin_t pexpin, uint8_t turn_on);
 
 void opt_led_on(pexpin_t pexpin);
@@ -181,3 +140,7 @@ void opt_led_off(pexpin_t pexpin);
 
 void opt_led_board_position_on(uint8_t pos);
 void opt_led_board_position_off(uint8_t pos);
+
+void read_regs(void);
+void read_pex_pin(uint8_t pos);
+void read_all_pex_pins(void);
