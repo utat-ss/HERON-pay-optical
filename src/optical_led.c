@@ -9,10 +9,19 @@ PEX datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf
 The PEX has 16 output channels. That means 2 of the LED will turn on together.
 *there's actually 36 LED slots, but only 34 are populated --> 2 empty slots 
 
+<<<<<<< HEAD
 Accepts input format:
 the physical location of the LED on the board, as uint8_t
     ex. 3rd from top left = 4
     ex. 1st on bottom row = 18
+=======
+Accepts channel number (ex. A1_2) 
+    or 
+the physical location of the LED on the board.
+ex. 3rd from top left = 4
+ex. 1st on bottom row = 18
+
+>>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 
 LED clock frequency = ~504 Hz (504 + 1/31 Hz)
 PEX (port expander) with address 0b011 = 3 is on top edge of PAY-SSM
@@ -254,7 +263,6 @@ void opt_led_on(pexpin_t pexpin){
     opt_led_switch(pexpin, 1);
 }
 
-
 //turn off LED
 void opt_led_off(pexpin_t pexpin){
     opt_led_switch(pexpin, 0);
@@ -266,21 +274,19 @@ void opt_led_off(pexpin_t pexpin){
 // *includes the blank LED slot with no actual LED (right end of pay-led board)
 void opt_led_board_position_on(uint8_t pos){
     pexpin_t pexpin = mf_channel_switcher[pos];
-
     opt_led_on(pexpin);
 }
-
 
 // accepts physical position of LED on board (0 - 33, inclusive)
 // numbered left-to-right, top-down
 // *includes the blank LED slot with no actual LED (right end of pay-led board)
 void opt_led_board_position_off(uint8_t pos){
     pexpin_t pexpin = mf_channel_switcher[pos];
-
     opt_led_off(pexpin);
 }
 
 
+<<<<<<< HEAD
 // print state of specified pex pin
 void read_pex_pin(uint8_t pos){
     pexpin_t pexpin = mf_channel_switcher[pos];

@@ -1,8 +1,12 @@
 /*
+<<<<<<< HEAD
 DESCRIPTION: toggles LEDs on/off on both PAY-LED boards in sequence
             - if you have only 1 board plugged it, it'll toggle those LEDs
             - then nothing will seem to happen
             - but it's actually trying to toggle the LED's on the other board, that's not plugged in
+=======
+DESCRIPTION: toggles LEDs on pay-optical
+>>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 AUTHOR: Yong Da Li
 */
 
@@ -16,7 +20,6 @@ AUTHOR: Yong Da Li
 #ifndef F_CPU
 #define F_CPU 8000000UL //8 MHz clock
 #endif
-
 
 void print_dirs() {
     print("bottom PEX - GPA Directions: %.2x\n", read_pex_register(&bot_pex, PEX_IODIR_A));
