@@ -4,7 +4,6 @@ AUTHOR: Yong Da LI
 
 Three things need to be linked:
 1. (microfluidics) channel number pay-ssm board, ex. A1_2
->>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 2. left-right, top-down numbering of LEDs on the whole board, ex. 3rd LED from top left
 3. pin number of port expander (PEX) that actually turns on the LED
 
