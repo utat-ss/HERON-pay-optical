@@ -277,7 +277,6 @@ void opt_led_board_position_off(uint8_t pos){
 }
 
 
-<<<<<<< HEAD
 // print state of specified pex pin
 void read_pex_pin(uint8_t pos){
     pexpin_t pexpin = mf_channel_switcher[pos];
