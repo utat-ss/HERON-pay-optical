@@ -1,12 +1,8 @@
 /*
-<<<<<<< HEAD
 DESCRIPTION: toggles LEDs on/off on both PAY-LED boards in sequence
             - if you have only 1 board plugged it, it'll toggle those LEDs
             - then nothing will seem to happen
             - but it's actually trying to toggle the LED's on the other board, that's not plugged in
-=======
-DESCRIPTION: toggles LEDs on pay-optical
->>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 AUTHOR: Yong Da Li
 */
 

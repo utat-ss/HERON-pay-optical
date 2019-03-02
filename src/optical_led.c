@@ -9,19 +9,10 @@ PEX datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf
 The PEX has 16 output channels. That means 2 of the LED will turn on together.
 *there's actually 36 LED slots, but only 34 are populated --> 2 empty slots 
 
-<<<<<<< HEAD
 Accepts input format:
 the physical location of the LED on the board, as uint8_t
     ex. 3rd from top left = 4
     ex. 1st on bottom row = 18
-=======
-Accepts channel number (ex. A1_2) 
-    or 
-the physical location of the LED on the board.
-ex. 3rd from top left = 4
-ex. 1st on bottom row = 18
-
->>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 
 LED clock frequency = ~504 Hz (504 + 1/31 Hz)
 PEX (port expander) with address 0b011 = 3 is on top edge of PAY-SSM

@@ -3,31 +3,20 @@ DESCRIPTION: Mappings for LEDs on PAY-LED boards
 AUTHOR: Yong Da LI
 
 Three things need to be linked:
-<<<<<<< HEAD
-1. (microfluidics) channel number on PAYY-SSM board, ex. A1_2
-=======
 1. (microfluidics) channel number pay-ssm board, ex. A1_2
 >>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 2. left-right, top-down numbering of LEDs on the whole board, ex. 3rd LED from top left
 3. pin number of port expander (PEX) that actually turns on the LED
 
 There are 2 PEX's, each with 16 channels of output (32 "switches").
-<<<<<<< HEAD
-There are combined 34 LED's on both pay-optical boards. *Actually 36 LED slots, but only 34 are populated --> 2 empty slots
-=======
 There are combined 34 LED's on both pay-optical boards.
->>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 The "switch" (aka PEX pin) for the left-most and right-most channels are connected
 i.e. turning on the channel for the left-most LED also turns on the right-most channel.
     - this is PEX pin 2
 
 optical_led.c accepts 2 input formats:
 1. (microfluidics) channel number, written on the Pay-led board
-<<<<<<< HEAD
     channel number (ex "A1_2") maps to a PEX pin, using the struct enum (pexpin_t datatype)
-=======
-    string of channel number (ex "A1_2") maps to a PEX pin, using the struct enum
->>>>>>> 7d70bae303926148029f5f67d9ad074b6b401c35
 
 2. physical location of LED, ex. 3rd from left
     [Use left to right, top-down numbering. Starting index is 0]
