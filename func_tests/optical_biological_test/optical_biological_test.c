@@ -11,6 +11,10 @@
 #define CH5_EN			  PIN2
 
 uint8_t rx_command(const uint8_t* buf, uint8_t len){
+  for (uint8_t i = 0; i < len; i++) {
+      put_uart_char(buf[i]);
+  }
+
   if (buf[0] == 0){
     // Perform a differential read
     uint32_t data = opt_adc_read_sync();
