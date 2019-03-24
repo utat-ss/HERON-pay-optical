@@ -3,11 +3,14 @@
 #include "optical_spi.h"
 
 int main(void) {
-    opt_adc_init();
-    print("Optical ADC Initialized\n");
+    // DO NOT INITIALIZE UART - it interferes with the SPI slave functionality
+
+    // TODO - watchdog?
+
+    // TODO - initialize optical ADC, SD, etc., use real data
+    opt_spi_use_dummy_data = true;
 
     opt_spi_init();
-    print("Optical SPI Initialized\n");
 
     while (1) {}
 }

@@ -120,8 +120,10 @@ ISR(SPI_STC_vect) {
                 // Encode the field number in the last byte for reference
                 spi_data = 0xdb6d00 | field_number;
             } else {
+                // TODO
                 // This is for getting actual optical ADC data
-                spi_data = opt_adc_read_field_raw_data(field_number);
+                // spi_data = opt_adc_read_field_raw_data(field_number);
+                spi_data = 0;
             }
 
             // Load the first byte into the data register
