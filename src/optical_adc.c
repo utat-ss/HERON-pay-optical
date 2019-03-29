@@ -229,13 +229,13 @@ void opt_adc_select_channel(uint8_t channel_num, uint8_t sign) {
         // Mask the channel bits and write new channel
         config &= CHANNEL_MASK_POS;
         config |= ((uint32_t) channel_bits) << 8;
-        print("AIN %d set to positive\n", channel_num);
+        //print("AIN %d set to positive\n", channel_num);
     }
     else{ // -ve
         uint8_t channel_bits = (channel_num -1);
         config &= CHANNEL_MASK_NEG;
         config |= ((uint32_t) channel_bits) << 8;
-        print("AIN %d set to negative\n", channel_num);
+        //print("AIN %d set to negative\n", channel_num);
     }
 
     // Write the new config register value
@@ -372,9 +372,9 @@ uint32_t opt_adc_read_sync(void){
 
     //print("Waited for %u cycles\n", 65535 - timeout);
     if (timeout == 0){
-        print("ERROR: TIMEOUT\n");
+        //print("ERROR: TIMEOUT\n");
     } else {
-        print("Conversion successful\n");
+        //print("Conversion successful\n");
     }
 
     //set _SYNC low to resycnhronize
