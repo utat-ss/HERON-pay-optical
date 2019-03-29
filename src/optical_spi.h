@@ -2,7 +2,7 @@
 #define OPTICAL_SPI_H
 
 #include <stdbool.h>
-#include <uart/uart.h>
+#include <spi/spi.h>
 #include "optical_adc.h"
 
 // DATA_RDY pin - goes to PAY-SSM to tell it that optical data is ready

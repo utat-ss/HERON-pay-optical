@@ -6,16 +6,20 @@
 #include <test/test.h>
 
 int main(void){
-	uint8_t num = 1;
-	init_opt_fluores();
+    uint8_t num = 1;
+    init_opt_fluores();
 
-	while(1){
-		opt_fluores_on(num);
-		_delay_ms(500);
+    while(1){
 
-		opt_fluores_off(num);
-		_delay_ms(500);
-	}
+        opt_fluores_on(num%8);
+        _delay_ms(2000);
 
-	return 0;
+        opt_fluores_off(num%8);
+        _delay_ms(2000);
+
+        num++;
+
+    }
+
+    return 0;
 }

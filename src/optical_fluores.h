@@ -7,7 +7,12 @@
 #include <utilities/utilities.h>
 #include "../../src/syncdemod.h"
 #include "../../src/pwm.h"
+#include "../../src/optical_adc.h"
 
+
+#define CH5_EN_PORT     PORTC
+#define CH5_EN_DDR      DDRC
+#define CH5_EN          PIN2
 
 void init_opt_fluores();
 
