@@ -33,6 +33,15 @@ uint32_t spi_data = 0;
 // Number of bytes already received by PAY
 uint8_t spi_num_bytes_done = 0;
 
+// A2 pairs up with A4
+uint8_t A2_channels[] = {4, 1, 2, 3, 6, 8, 5, 7};
+uint8_t A4_channels[] = {2, 3, 1, 4, 6, 8, 7, 5};
+// A1 pairs up with A3
+uint8_t A1_channels[] = {3, 2, 1, 4, 6, 8, 7, 5};
+uint8_t A3_channels[] = {1, 4, 2, 3, 6, 8, 7, 5};
+
+uint8_t *channels[] = {A1_channels, A2_channels, A3_channels, A4_channels};
+
 // Interrupts - see datasheet section 8
 // SPI - see datasheet pg.133-...
 
@@ -120,10 +129,23 @@ ISR(SPI_STC_vect) {
                 // Encode the field number in the last byte for reference
                 spi_data = 0xdb6d00 | field_number;
             } else {
-                // TODO
+                // set SPI transfer lines to MISO_A and MISO_B (set to 0)
+                MCUCR &= ~(1<<SPIPS);
+
+                // set optical to Master
+                SPCR |= (1<<MSTR);
+
                 // This is for getting actual optical ADC data
-                // spi_data = opt_adc_read_field_raw_data(field_number);
-                spi_data = 0;
+                opt_adc_init();
+                opt_adc_init_sync(field_number/8);
+                opt_adc_enable_mux(channels[field_number/8][field_number%8]);
+                spi_data = opt_adc_read_sync();
+
+                // set SPI transfer lines back to normal lines,
+                MCUCR |= (1<<SPIPS);
+
+                // set optical to Slave, so SSM can read
+                SPCR &= ~(1<<MSTR);
             }
 
             // Load the first byte into the data register

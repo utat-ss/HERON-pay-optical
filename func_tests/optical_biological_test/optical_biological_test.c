@@ -6,9 +6,9 @@
 #include "../../src/pwm.h"
 
 
-#define CH5_EN_PORT		PORTC
-#define CH5_EN_DDR		DDRC
-#define CH5_EN			  PIN2
+#define CH5_EN_PORT     PORTC
+#define CH5_EN_DDR      DDRC
+#define CH5_EN            PIN2
 
 uint8_t rx_command(const uint8_t* buf, uint8_t len){
   for (uint8_t i = 0; i < len; i++) {
@@ -21,7 +21,7 @@ uint8_t rx_command(const uint8_t* buf, uint8_t len){
     print("Data = %06lX = %d %%\n", data, (int16_t) ((double) data / (double) 0xFFFFFF * 100.0));
     print("Voltage = %.6f V \n\n", -1 * opt_adc_raw_data_to_diff_vol(data, 1));
   } else if (buf[0] <= 8){
-    // Enable one of mux channel 0-8
+    // Enable one of mux channel 0-7
     opt_adc_enable_mux(buf[0] - 1);
     print("--Selected channel %d\n", buf[0]);
   } else if ((buf[0] >> 4)  == 9){
