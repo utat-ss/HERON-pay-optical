@@ -35,16 +35,15 @@ void read_values(uint8_t well_num, uint8_t channel_num){
 }
 
 void sweep_thru_channels(uint8_t num){
-  opt_adc_init_sync(num-1); // A1 channel
-  syncdemod_enable_rclk(num + 2);
   //print("--Optical ADC A%d initialized\n\n", num);
-
   print_columns();
   for (uint8_t i = 0; i < 8; i++){
     uint8_t a = channels[num-1][i];
     // Initialize the differential pair corresponding to the bank number
     opt_adc_enable_mux(a - 1);
-    read_values(i, a);
+    for (uint8_t j = 0; j < 10; j++){
+      read_values(i, a);
+    }
   }
   opt_adc_disable_mux();
 }
@@ -112,6 +111,11 @@ int main(void){
 
   // initialize the syncdemod
   syncdemod_init();
+
+  opt_adc_init_sync(0); // A1 channel
+  print("--Selected bank A1\n");
+  syncdemod_enable_rclk(SD1_CS_PIN);
+  print("--Enabled RCLK1\n");
 
   while(1){}
 }
