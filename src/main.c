@@ -8,7 +8,7 @@ int main(void) {
     // TODO - watchdog?
 
     // TODO - initialize optical ADC, SD, etc., use real data
-    opt_spi_use_dummy_data = true;
+    opt_spi_use_dummy_data = false;
 
     opt_spi_init();
 

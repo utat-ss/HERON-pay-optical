@@ -5,9 +5,9 @@
 #include <uart/uart.h>
 #include <spi/spi.h>
 #include <utilities/utilities.h>
-#include "../../src/syncdemod.h"
-#include "../../src/pwm.h"
-#include "../../src/optical_adc.h"
+#include "syncdemod.h"
+#include "pwm.h"
+#include "optical_adc.h"
 
 
 #define CH5_EN_PORT     PORTC
