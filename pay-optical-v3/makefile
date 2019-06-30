@@ -18,7 +18,7 @@ PROG = pay_optical
 
 # Libraries from lib-common to link
 # May need to change this line
-LIB = -L./lib-common-ported/lib -luart -lspi -lstack -ltimer -lqueue -lpex -lutilities
+LIB = -L./lib-common-ported/lib -lpex -luart -lspi -li2c -lstack -lqueue -lutilities
 
 # Detect operating system - based on https://gist.github.com/sighingnow/deee806603ec9274fd47
 

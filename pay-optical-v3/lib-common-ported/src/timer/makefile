@@ -1,2 +1,0 @@
-LIBNAME = timer
-include ../makefile

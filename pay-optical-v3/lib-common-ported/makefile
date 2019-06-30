@@ -1,6 +1,6 @@
 # All libraries (subdirectories/folders) in lib-common
 # Need to put uart first because other libraries depend on it (otherwise get error of "No rule to make target...")
-LIBNAMES = uart pex queue spi stack timer utilities i2c
+LIBNAMES = uart i2c spi pex queue stack utilities
 # Subfolders in src folder
 SRC = $(addprefix src/,$(LIBNAMES))
 # Subfolders in build folder

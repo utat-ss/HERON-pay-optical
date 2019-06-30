@@ -59,6 +59,9 @@ void reset_pex(pex_t*);
 uint8_t read_pex_register(pex_t*, uint8_t addr);
 void write_pex_register(pex_t*, uint8_t addr, uint8_t data);
 
+uint16_t get_pex_bank_pair(pex_t* pex, uint8_t addr);
+void set_pex_bank_pair(pex_t* pex, uint8_t addr, uint16_t data);
+
 void set_pex_pin_dir(pex_t* pex, pex_bank_t bank, uint8_t pin, pex_dir_t dir);
 void set_pex_pin(pex_t* pex, pex_bank_t bank, uint8_t pin, uint8_t state);
 uint8_t get_pex_pin(pex_t* pex, pex_bank_t bank, uint8_t pin);
