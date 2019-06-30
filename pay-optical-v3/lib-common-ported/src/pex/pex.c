@@ -1,22 +1,21 @@
 /*
-MCP23S17 port expander (PEX)
+MCP23017 port expander (PEX)
 Datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf
 
 A port expander is a device with many GPIO (general purpose input/output) pins.
 Each GPIO pin can function as either an input or an output, depending on what
 you want to use it for. Using a port expander gives us more GPIO pins to work
-with since we have a limited number on the 32M1 itself.
+with.
 
-The 32M1 communicates with the PEX over SPI, telling it to use pins as inputs or
+The micro communicates with the PEX over I2C, telling it to use pins as inputs or
 outputs, read values from pins, or write values to pins.
 
 The PEX has two "banks", labelled A and B. Each has 8 pins,
 labelled GPA0-GPA7 and GPB0-GPB7.
 
 Each PEX device has a 3-bit address, determined by how the pins A2, A1, A0
-are connected in hardware. Each SPI command contains the address of the PEX it
-is meant for, allowing up to 8 PEX devices to be connected using the same CS
-(chip select) line. A PEX will only respond to the command if its address
+are connected in hardware. Each I2C command contains the address of the PEX it
+is meant for, allowing up to 8 PEX devices to be connected using the same I2C bus. A PEX will only respond to the command if its address
 matches the one sent in the comand.
 
 AUTHORS: Dylan Vogel, Shimi Smith, Bruno Almeida, Siddharth Mahendraker
@@ -29,12 +28,10 @@ Initializes port expander reset and chip select pins on the 32M1
 pex - pointer to the pex device
 */
 void init_pex(pex_t* pex) {
-    init_cs(pex->rst->pin, pex->rst->ddr);
-    set_cs_high(pex->rst->pin, pex->rst->port);
-
-    init_cs(pex->cs->pin, pex->cs->ddr);
-    set_cs_high(pex->cs->pin, pex->cs->port);
-
+    // Init RST if it's enabled
+    if(pex->rst != NULL){
+        init_cs(pex->rst->pin, pex->rst->ddr);
+    }
     // Default configuration
     write_pex_register(pex, PEX_IOCON, PEX_IOCON_DEFAULT);
 }
@@ -44,10 +41,16 @@ Resets the port expander
 pex - pointer to the pex device
 */
 void reset_pex(pex_t* pex) {
-    set_cs_low(pex->rst->pin, pex->rst->port);
-    _delay_ms(1); // minimum 1 microsecond
-    set_cs_high(pex->rst->pin, pex->rst->port);
-    _delay_ms(1);
+    // Reset the port expander if it's enabled
+    if (pex->rst != NULL){
+        set_cs_low(pex->rst->pin, pex->rst->port);
+        _delay_ms(1); // minimum 1 microsecond
+        set_cs_high(pex->rst->pin, pex->rst->port);
+        _delay_ms(1);
+    } else {
+        print("Error: RST not connected on PEX");
+    }
+
 }
 
  /*
@@ -57,12 +60,12 @@ void reset_pex(pex_t* pex) {
  data - 8 bit data to write to the registers
  */
 void write_pex_register(pex_t* pex, uint8_t addr, uint8_t data) {
-    set_cs_low(pex->cs->pin, pex->cs->port);
-    // SPI control byte format: pg 15
-    send_spi(PEX_WRITE_CONTROL_BYTE | (pex->addr << 1));
-    send_spi(addr);
-    send_spi(data);
-    set_cs_high(pex->cs->pin, pex->cs->port);
+    // I2C control byte format: pg 15
+    send_start_i2c();
+    send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_WRITE);
+    send_data_i2c(addr, I2C_ACK);
+    send_data_i2c(data, I2C_ACK);
+    send_stop_i2c();
 }
 
 /*
@@ -73,15 +76,55 @@ pex - pointer to the pex device
 addr - address of register to read
 */
 uint8_t read_pex_register(pex_t* pex, uint8_t addr) {
-    set_cs_low(pex->cs->pin, pex->cs->port);
-    // SPI control byte format: pg 15
-    send_spi(PEX_READ_CONTROL_BYTE | (pex->addr << 1));
-    send_spi(addr);
-    uint8_t ret = send_spi(0x00);
-    set_cs_high(pex->cs->pin, pex->cs->port);
+    uint8_t data = 0;
 
-    return ret;
+    // I2C control byte format: pg 15
+    send_start_i2c();
+    send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_READ);
+    send_data_i2c(addr, I2C_ACK);
+    read_data_i2c(&data, I2C_NACK);
+    send_stop_i2c();
+
+    return data;
 }
+
+/*
+Returns a read of bank A and B for a particular address pair
+Assumes the bank A address is given
+High byte return is bank A, low byte is bank B, MSB first
+*/
+uint16_t get_pex_bank_pair(pex_t* pex, uint8_t addr){
+    // See page 13 for a description of this mode
+
+    uint8_t reth = 0;
+    uint8_t retl = 0;
+
+    send_start_i2c();
+    send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_READ);
+    send_data_i2c(addr, I2C_ACK);
+    read_data_i2c(&reth, I2C_ACK);
+    read_data_i2c(&retl, I2C_NACK);
+    send_stop_i2c();
+
+    return (uint16_t)((reth << 8) | retl);
+}
+
+/*
+Writes to both bank A and B for a particular address pair
+Assumes bank A address is given
+High byte of data is bank A, low byte is bank B
+*/
+uint16_t set_pex_bank_pair(pex_t* pex, uint8_t addr, uint16_t data){
+    // See page 13 for a description of this mode
+
+    send_start_i2c();
+    send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_WRITE);
+    send_data_i2c(addr, I2C_ACK);
+    send_data_i2c((uint8_t)(data >> 8), I2C_ACK);
+    send_data_i2c((uint8_t)(data), I2C_ACK);
+    send_stop_i2c();
+}
+
 
 /*
 Sets the direction of pin 'pin' on bank 'bank' to state 'dir'

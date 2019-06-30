@@ -1,7 +1,9 @@
 #ifndef PEX_H
 #define PEX_H
 
+#include <i2c/i2c.h>
 #include <spi/spi.h>
+#include <uart/uart.h>
 #include <stdint.h>
 #include <avr/io.h>
 
@@ -25,10 +27,11 @@
 #define PEX_IOCON_DEFAULT       0b00001000
 // Bit 3 sets hardware addressing
 
-// Control bytes for writing and reading registers, see page 15
-// Last bit is 0 for write, 1 for read
-#define PEX_WRITE_CONTROL_BYTE  0b01000000
-#define PEX_READ_CONTROL_BYTE   0b01000001
+// 7-bit control "byte" for writing and reading registers, see page 15
+// Bit[2:0] should be masked with the device address
+// Does not include r/~w bit, that's handled by I2C
+#define PEX_CONTROL_BYTE  0b0100000
+
 // Bits [3:1] are A[2:0] hardware addresses.
 
 // Direction of GPIO pins
@@ -47,8 +50,7 @@ typedef enum {
 typedef struct {
     uint8_t addr;
 
-    pin_info_t* cs; // chip select (CS) pin info
-    pin_info_t* rst; // reset pin info
+    pin_info_t* rst;    
 } pex_t;
 
 void init_pex(pex_t*);

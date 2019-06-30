@@ -2,6 +2,9 @@
 #define __AVR_ATmega8A__
 #endif 
 
+#ifndef I2C_H
+#define I2C_H
+
 #include <utilities/utilities.h>
 #include <uart/uart.h>
 
@@ -32,3 +35,13 @@
 #define I2C_SLAR_NACK       0x48    // SLA+R transmitted, NACK received
 #define I2C_RDATA_ACK       0x50    // Data byte received, ACK returned
 #define I2C_RDATA_NACK      0x58    // Data byte received, NACK returned
+
+void init_i2c(void);
+uint8_t send_start_i2c(void);
+uint8_t send_addr_i2c(uint8_t addr, uint8_t read_or_write);
+uint8_t send_data_i2c(uint8_t data, uint8_t ack);
+uint8_t read_data_i2c(uint8_t* data, uint8_t ack);
+uint8_t send_stop_i2c(void);
+void handle_error_i2c(uint8_t status_code);
+
+#endif // I2C_H

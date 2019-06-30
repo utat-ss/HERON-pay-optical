@@ -1,4 +1,25 @@
-#include "i2c.h"
+/*
+    Library for using I2C (TWI) on the Atmega8a
+    I2C has a lot of potential states during use, so the library is written such
+    that the application programmer can decide how to handle the I2C state machine in their code.
+
+    Written by: Dylan Vogel
+
+    Example use (not necessarily good use, no error handling here):
+
+        int main(void){
+            uint8_t dummy_addr;
+            uint8_t dummy_data;
+
+            init_i2c();
+            send_start_i2c();
+            send_addr_i2c(dummy_addr, I2C_WRITE);
+            send_data_i2c(dummy_data, I2C_ACK);
+            send_stop_i2c();
+        }
+*/
+
+#include <i2c/i2c.h>
 
 /*
 Initializes I2C (TWI) at 400k (default) w/out interrupts
@@ -9,7 +30,9 @@ void init_i2c(void){
     TWCR |= _BV(TWEN);                                  // enable I2C. somewhat irrelevant since it's set in every other function
 }
 
-
+/*
+Request to send a START condition on the I2C bus
+*/
 uint8_t send_start_i2c(void){
     uint16_t timeout = UINT16_MAX;
 
@@ -56,10 +79,9 @@ uint8_t send_addr_i2c(uint8_t addr, uint8_t read_or_write){
 /*
 Writes a data byte to I2C bus as master
 data: data to send
-read_or_write: read/~write
 ack: expect ack/~nack
 */
-uint8_t send_data_i2c(uint8_t data, uint8_t read_or_write, uint8_t ack){
+uint8_t send_data_i2c(uint8_t data, uint8_t ack){
     uint16_t timeout = UINT16_MAX;
     uint8_t status = 0;
 
@@ -89,7 +111,7 @@ Receives a data byte from the I2C bus as master
 data: pointer to where data will be stored (return is used for error handling)
 ack: send ack/~nack, NACK indicates end of transmission to the slave
 */
-uint8_t receive_data_i2c(uint8_t* data, uint8_t ack){
+uint8_t read_data_i2c(uint8_t* data, uint8_t ack){
     uint16_t timeout = UINT16_MAX;
     uint8_t status = 0;
 
