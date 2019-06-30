@@ -1,6 +1,6 @@
 # lib-common *ported-edition*
 
-Lib-common-*ported edition* contains a ported set of libraries from the original lib-common, to be used in the pay-optical firmwar.
+Lib-common-*ported edition* contains a ported set of libraries from the original lib-common, to be used in the pay-optical firmware.
 
 Lib-common-*ported edition* currently (as of June 29, 2019) provides support for:
 
@@ -9,6 +9,7 @@ Lib-common-*ported edition* currently (as of June 29, 2019) provides support for
 
 Support to be added includes:
 * SPI
+* I2C
 * Timers
 * Heap-free data structures
     * Queues
