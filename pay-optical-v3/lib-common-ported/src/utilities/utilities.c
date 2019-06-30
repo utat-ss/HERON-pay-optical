@@ -26,8 +26,6 @@ void init_output_pin(uint8_t pin, ddr_t ddr, uint8_t init_val) {
         port = &PORTC;
     } else if (ddr == &DDRD) {
         port = &PORTD;
-    } else if (ddr == &DDRE) {
-        port = &PORTE;
     } else {
         return;
     }
@@ -97,8 +95,6 @@ uint8_t get_pin_val(uint8_t pin, port_t port) {
         return (PINC & _BV(pin)) ? 1 : 0;
     } else if (port == &PORTD) {
         return (PIND & _BV(pin)) ? 1 : 0;
-    } else if (port == &PORTE) {
-        return (PINE & _BV(pin)) ? 1 : 0;
     } else {
         return 0;
     }

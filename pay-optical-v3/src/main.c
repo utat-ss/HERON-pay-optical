@@ -1,18 +1,16 @@
-/*
- * pay-optical-v3.c
- *
- * Created: 2019-06-28 11:16:34 PM
- * Author : Dylan Vogel
- */ 
+#ifndef __AVR_ATmega8A__ 
+#define __AVR_ATmega8A__
+#endif 
 
-#include <avr/io.h>
+#include <utilities/utilities.h>
+#include <uart/uart.h>
 
 
-int main(void)
-{
-    /* Replace with your application code */
-    while (1) 
-    {
+int main(void) {
+	init_uart();
+    while (1) {
+		_delay_ms(1000);
+		print("Hello world\n");
     }
 }
 

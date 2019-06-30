@@ -14,9 +14,9 @@ INCLUDES = -I$(LIB_COMMON)/include
 # For some reason, conversions needs to come after dac or else it gives an error
 # Need to put dac before conversions, uptime before timer,
 # or else gives an error for undefined reference
-LIB = -L$(LIB_COMMON)/lib -ladc -lcan -ldac -lconversions -lheartbeat -lpex -lqueue -lspi -lstack -ltest -luptime -ltimer -luart -lutilities -lwatchdog -lprintf_flt -lm
+LIB = -L$(LIB_COMMON)/lib -lpex -lqueue -lspi -lstack -ltimer -luart -lutilities -lprintf_flt -lm
 # Name of microcontroller ("32m1" or "64m1")
-MCU = 64m1
+MCU = 8a
 #-------------------------------------------------------------------------------
 
 
@@ -28,7 +28,7 @@ CFLAGS = -std=gnu99 -Wall -Wl,-u,vfprintf -g -mmcu=atmega$(MCU) -Os -mcall-prolo
 # Programmer
 PGMR = stk500
 # AVR device for avrdude uploading - must be prefixed with "m"
-DEVICE = m$(MCU)
+DEVICE = m8
 
 
 # Detect operating system - based on https://gist.github.com/sighingnow/deee806603ec9274fd47

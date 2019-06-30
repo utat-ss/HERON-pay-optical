@@ -1,22 +1,20 @@
-# lib-common
+# lib-common *ported-edition*
 
-Lib-common contains a common set of libraries to be used across all subsystems.
+Lib-common-*ported edition* contains a ported set of libraries from the original lib-common, to be used in the pay-optical firmwar.
 
-Lib-common currently (as of Oct. 1, 2018) provides support for:
+Lib-common-*ported edition* currently (as of June 29, 2019) provides support for:
 
 * UART
+* Utilities (GPIO)
+
+Support to be added includes:
 * SPI
-* CAN
-* Heartbeat (error recovery)
 * Timers
 * Heap-free data structures
     * Queues
     * Stacks
-* ADC (Analog to Digital Converter, ADS7952)
-* DAC (Digital to Analog Converter, DAC7562)
-* PEX (Port Expander, MCP23S17)
-* Data conversions from their "raw" form to usable measurements
-* Test harness for assertion-based testing
+* PEX (Port Expander, MCP23017)
+
 
 # Prerequisites
 

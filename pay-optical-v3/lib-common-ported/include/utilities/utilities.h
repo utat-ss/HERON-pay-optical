@@ -8,6 +8,11 @@
 #ifndef F_CPU
 #define F_CPU 8000000UL
 #endif
+
+#ifndef __AVR_ATmega8A__ 
+#define __AVR_ATmega8A__
+#endif 
+
 #include <util/delay.h>
 
 // Default values in EEPROM for different sizes

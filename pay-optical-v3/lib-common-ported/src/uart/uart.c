@@ -12,7 +12,8 @@ user-friendly terminal).
 #include <string.h>
 
 // Maximum number of characters the UART RX buffer can store
-#define UART_MAX_RX_BUF_SIZE 50
+#define UART_MAX_RX_BUF_SIZE    50
+#define UBRR    (uint16_t)(UART_F_IO/16/UART_DEF_BAUD_RATE-1)
 
 // Buffer of received characters
 volatile uint8_t uart_rx_buf[UART_MAX_RX_BUF_SIZE];
@@ -27,28 +28,22 @@ uint8_t _uart_rx_cb_nop(const uint8_t* c, uint8_t len) {
 uart_rx_cb_t uart_rx_cb = _uart_rx_cb_nop;
 
 
-
-
-// Initializes the UART library with the default 9600 baud rate.
+/*
+Initializes the UART library
+No parity bit, 8 bit data, 9600 baud
+ */ 
 void init_uart(void) {
-    // Set software reset bit (this bit will self-reset afer, p. 290)
-    LINCR = _BV(LSWRES);
-
-    // Set default baud rate
-    set_uart_baud_rate(UART_DEF_BAUD_RATE);
-
-    /*
-    Enable UART, full duplex (p. 290)
-    No reset
-    LIN 2.1
-    8-bit, no parity, listen mode off
-    Enable UART
-    Enable RX byte and TX byte
-    */
-    LINCR = _BV(LENA) | _BV(LCMD2) | _BV(LCMD1) | _BV(LCMD0);
-
-    // Only enable interrupts for received charcaters (p. 294)
-    LINENIR = _BV(LENRXOK);
+    // disable interrupts
+    cli(); 
+    // set doublespeed mode; not needed for 9600 baud
+    // UCSRA |= _BV(U2X);
+    // Enable RX, TX and RX interrupts
+    UCSRB |= _BV(TXEN) | _BV(RXEN) | _BV(RXCIE);
+    // Set UART to use 8 data bits
+    UCSRC |= _BV(URSEL) | _BV(UCSZ1) | _BV(UCSZ0);
+    // set UBBR to 8 
+    UBRRH = (uint8_t)(UBRR >> 8);
+    UBRRL = (uint8_t)UBRR;
 
     // reset RX buffer and counter
     clear_uart_rx_buf();
@@ -60,76 +55,14 @@ void init_uart(void) {
 }
 
 /*
-Sets the values of the registers that determine the UART baud rate.
-
-lbt - value of LBT[5:0] in LINBTR (LIN bit timing) register (AFTER subtracting 1
-    in the formula); number of samples per bit; must be between 8 and 63
-    (p. 283, 289, 297)
-
-ldiv - Scaling of clk_io frequency; value to assign to 16-bit LINBRR register
-    (p. 298); calculated from formula on p.282; this number is not necessarily
-    integer; if the number is too far from being an integer, too much error
-    will accumulate and UART will outputgarbage
-    from p.282: LDIV = (F_IO / (BAUD_RATE * BIT_SAMPLES)) - 1;
-*/
-static void set_baud_regs(uint8_t lbt, uint16_t ldiv) {
-    // Set these values atomically because the baud rate is determined by both
-    // Also, we are setting LINBRR, which is a 16-bit register
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-        // To be able to set LDISR and LBT[5:0], need to set LENA = 0 (p. 283)
-        // Save the old value of LINCR
-        uint8_t LINCR_old = LINCR;
-        LINCR &= ~_BV(LENA);
-
-        // Need to set the LDISR bit to 1 (disable bit timing resynchronization)
-        // to be able to set LBT[5:0] (p. 289, 297)
-        LINBTR = _BV(LDISR) | lbt;
-
-        // Restore the old value of LINCR
-        LINCR = LINCR_old;
-
-        // Set LINBRR 16-bit register to LDIV (high and low registers separate)
-        LINBRRH = (uint8_t) (ldiv >> 8);
-        LINBRRL = (uint8_t) ldiv;
-    }
-}
-
-/*
-Sets the UART baud rate on the microcontroller.
-baud_rate - one of a select set of baud rates where the clock division ratios
-    are known to work
-The baud rate needs to match the one used for the transceiver/CoolTerm.
-*/
-void set_uart_baud_rate(uart_baud_rate_t baud_rate) {
-    // These values of LBT and LDIV are chosen to give as close to integer
-    // numbers as possible with the formula on p. 282
-    // Trying to keep LBT close to the default 32
-    switch (baud_rate) {
-        case UART_BAUD_1200:
-            set_baud_regs(32, 207);
-            break;
-        case UART_BAUD_9600:
-            set_baud_regs(32, 25);
-            break;
-        case UART_BAUD_19200:
-            set_baud_regs(32, 12);
-            break;
-        case UART_BAUD_115200:
-            set_baud_regs(35, 1);
-            break;
-        default:
-            break;
-    }
-}
-
-/*
 Sends one character over UART (TX)
+Waits for the UDRE bit to go high to indicate that data can be written
 c - character to send
 */
 void put_uart_char(uint8_t c) {
     uint16_t timeout = UINT16_MAX;
-    while ((LINSIR & _BV(LBUSY)) && timeout--);
-    LINDAT = c;
+    while (!(UCSRA & _BV(UDRE)) && timeout--);
+    UDR = c;
 }
 
 /*
@@ -140,8 +73,8 @@ Frees up ret val for error handling
 */
 void get_uart_char(uint8_t* c) {
     uint16_t timeout = UINT16_MAX;
-    while ((LINSIR & _BV(LBUSY)) && timeout--);
-    *c = LINDAT;
+    while (!(UCSRA & _BV(RXC)) && timeout--);
+    *c = UDR;
 }
 
 /*
@@ -192,11 +125,12 @@ void clear_uart_rx_buf(void) {
 }
 
 // Interrupt handler that will be called when we receive a character over UART
-ISR(LIN_TC_vect) {
+ISR(USART_RXC_vect) {
     // Check if we got the interrupt for a received character (p. 293)
-    if (LINSIR & _BV(LRXOK)) {
+    if (UCSRA & _BV(RXC)) {
         // Fetch the new recieved character
         static uint8_t c;
+        // reading the UDR also clears the RXC interrupt flag
         get_uart_char(&c);
 
         // Add the new character to the RX buffer
@@ -228,9 +162,5 @@ ISR(LIN_TC_vect) {
         if (uart_rx_buf_count >= UART_MAX_RX_BUF_SIZE) {
             clear_uart_rx_buf();
         }
-
-        // Clear RX interrupt bit (p. 293)
-        // TODO - does this actually work? should we write a 1 instead?
-        LINSIR &= ~_BV(LRXOK);
     }
 }
