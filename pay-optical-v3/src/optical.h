@@ -4,6 +4,8 @@
 #include <pex/pex.h>
 #include <stdint.h>
 #include <i2c/i2c.h>
+#include "i2c_mux.h"
+#include "light_sens.h"
 
 /* PORT EXPANDER ADDRESSES (HARDWARE) */
 #define OPTICAL_PEX1_ADDR       0b001
@@ -38,6 +40,8 @@ uint16_t get_sensor_data(uint8_t pos);
  */
 
 /* FUNCTION PROTOTYPES */
+void init_opt_sensors(void);
+void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens);
 void all_on(void);
 void all_off(void);
 void init_all_pex(void);

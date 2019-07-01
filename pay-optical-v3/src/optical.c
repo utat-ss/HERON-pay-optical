@@ -21,11 +21,36 @@ pex_t LED_PEX2 = {
     .rst = NULL
 };
 
+light_sensor_t opt_sensors[32];
+
+/*
+Initialize the global array of optical sensors
+*/
+void init_opt_sensors(void){
+    for (uint8_t i = 0; i < 32; i++){
+        init_light_sensor(opt_sensors + i);
+    }
+}
+
+/*
+Take readings from the optical sensor and calibrate gain and integration time
+to extract maximum dynamic range
+*/
+void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
+
+}
+
+/*
+Turn on all LEDs
+*/
 void all_on(void){
     set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0xFFFF);
     set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0xFFFF);
 }
 
+/*
+Turn off all LEDs
+*/
 void all_off(void){
     set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0x0000);
     set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0x0000);

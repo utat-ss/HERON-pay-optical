@@ -18,7 +18,7 @@ typedef struct {
 /* FUNCTION PROTOTYPES */
 void reset_mux(mux_t* mux);
 void set_mux_channel(mux_t* mux, uint8_t channel);
-uint8_t get_mux_channel(mux_t* mux);
+uint8_t get_mux_channels(mux_t* mux);
 void enable_all_mux_channels(mux_t* mux);
 void disable_all_mux_channels(mux_t* mux);
 

@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <utilities/utilities.h>
+#include <uart/uart.h>
 #include <i2c/i2c.h>
 #include "optical.h"
 
@@ -31,8 +32,11 @@
 #define ADC_DEF_PRESCALER   0b110
 
 /* FUNCTION PROTOTYPES */
-void init_board();
 void init_power();
+void init_board();
+void init_board_sensors();
+void disable_sensor_power();
+void enable_sensor_power();
 void enter_sleep_mode();
 void enter_normal_mode();
 float power_read_current();

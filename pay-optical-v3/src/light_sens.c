@@ -9,17 +9,23 @@
 /*
 Enable the TSL2591 and set default gain and integration time
 */
-void init_light_sens(void){
+void init_light_sensor(light_sensor_t* light_sens){
     write_light_sense_register(LSENSE_ENABLE, LSENSE_DEF_ENABLE);
     write_light_sense_register(LSENSE_CONTROL, LSENSE_DEF_CONTROL);
+    // Indicate that the sensor is enabled
+    light_sens->state = LS_ENABLED;
+    // Set the default values
+    light_sens->gain = LS_LOW_GAIN;
+    light_sens->time = LS_200ms;
 }
 
 /*
 Put the TSL2591 to sleep
 Disables the ALS and internal oscillator
 */
-void sleep_light_sens(void){
+void sleep_light_sensor(light_sensor_t* light_sens){
     write_light_sense_register(LSENSE_ENABLE, 0x00);
+    light_sens->state = LS_DISABLED;
 }
 
 /*
@@ -28,8 +34,9 @@ Enables the ALS and the internal oscillator
 Should be used instead of "init_light_sens" if you wish to save any
 gain or intergation time settings previously written
 */
-void wake_light_sense(void){
+void wake_light_sensor(light_sensor_t* light_sens){
     write_light_sense_register(LSENSE_ENABLE, LSENSE_DEF_ENABLE);
+    light_sens->state = LS_ENABLED;
 }
 
 /*
@@ -47,9 +54,6 @@ void write_light_sense_register(uint8_t addr, uint8_t data){
 
 /*
 Read from one of the read/write registers on the TSL2591
-Please use "read_only_light_sense_register" to read from one of
-the read-only registers, they have a different access method
-addr: 4-bit register address
  */
 uint8_t read_light_sense_register(uint8_t addr){
     uint8_t data;
@@ -66,23 +70,18 @@ uint8_t read_light_sense_register(uint8_t addr){
 }
 
 /*
-Return the luminosity value from a particular channel (CH0 or CH1)
-channel: LS_CH0 (0) or LS_CH1 (1)
+Return the values in all the read-only registers of the device
+Must supply a uint8_t* pointer to an array of length 7
+Faster than getting individual channel readings
 */
-uint16_t get_light_sense_channel(light_sense_ch_t channel){
-    uint32_t data = get_light_sense_readings();
-    uint16_t reading = 0;
-
-    switch (channel){
-        case LS_CH0:
-            reading = (uint16_t)(data & 0x0000FFFF);
-            break;
-        case LS_CH1:
-            reading = (uint16_t)((data >> 16) & 0x0000FFFF);
-            break;
+void get_light_sense_read_only(uint8_t* data){
+    send_start_i2c();
+    send_addr_i2c(LSENSE_ADDRESS_READ_ONLY, I2C_READ);
+    for (uint8_t i = 0; i < 6; i++){
+        read_data_i2c((data + i), I2C_ACK);
     }
-
-    return reading;
+    read_data_i2c((data + 6), I2C_NACK);
+    send_stop_i2c();
 }
 
 /*
@@ -91,7 +90,7 @@ To get a correct reading of CH1, CH0 must be read first
 See: https://forums.adafruit.com/viewtopic.php?f=19&t=124176 for reference
 CH1 returned in the top two bytes, CH0 returned in the lower two bytes
 */
-uint32_t get_light_sense_readings(){
+void get_light_sensor_readings(light_sensor_t* light_sens){
     uint8_t reth = 0;
     uint8_t retl = 0;
     uint16_t ch0_reading = 0;
@@ -118,44 +117,32 @@ uint32_t get_light_sense_readings(){
 
     ch1_reading = (uint16_t)((reth << 8) | retl);
 
-    return (uint32_t)((ch1_reading << 16) | ch0_reading);
+    light_sens->last_ch0_reading = ch0_reading;
+    light_sens->last_ch1_reading = ch1_reading;
 }
 
 /*
-Return the values in all the read-only registers of the device
-Must supply a uint8_t* pointer to an array of length 7
-Faster than getting individual channel readings
+Set the gain bits in the TSL2591 CONTROL register to 
+the gain value stored in the light_sens object
 */
-void get_light_sense_read_only(uint8_t* data){
-    send_start_i2c();
-    send_addr_i2c(LSENSE_ADDRESS_READ_ONLY, I2C_READ);
-    for (uint8_t i = 0; i < 6; i++){
-        read_data_i2c((data + i), I2C_ACK);
-    }
-    read_data_i2c((data + 6), I2C_NACK);
-    send_stop_i2c();
-}
-
-/*
-Set the gain bits in the TSL2591 CONTROL register
-*/
-void set_light_sense_again(light_sense_again_t gain){
+void set_light_sensor_again(light_sensor_t* light_sens){
     // read the old control register value
     uint8_t control_value = read_light_sense_register(LSENSE_CONTROL);
     // insert the new gain bits
-    control_value = (control_value & LSENSE_AGAIN_MASK) | ((gain << 4) & ~LSENSE_AGAIN_MASK);
+    control_value = (control_value & LSENSE_AGAIN_MASK) | ((light_sens->gain << 4) & ~LSENSE_AGAIN_MASK);
     // write back the new register value
     write_light_sense_register(LSENSE_CONTROL, control_value);
 }
 
 /*
-Set the integration time bits in the TSL2591 CONTROL register
+Set the integration time bits in the TSL2591 CONTROL register to
+the time value stored in the light_sens object
 */
-void set_light_sense_atime(light_sense_atime_t time){
+void set_light_sensor_atime(light_sensor_t* light_sens){
     // read the old control register value
     uint8_t control_value = read_light_sense_register(LSENSE_CONTROL);
     // insert the new integration time bits
-    control_value = (control_value & LSENSE_ATIME_MASK) | (time & ~LSENSE_ATIME_MASK);
+    control_value = (control_value & LSENSE_ATIME_MASK) | (light_sens->time & ~LSENSE_ATIME_MASK);
     // write back the new register value
     write_light_sense_register(LSENSE_CONTROL, control_value);
 }

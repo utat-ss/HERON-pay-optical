@@ -29,7 +29,7 @@ mux: pointer to mux_t
 Bit position of "1"'s in return value corresponds to 
 enabled channel(s)
  */
-uint8_t get_mux_channel(mux_t* mux){
+uint8_t get_mux_channels(mux_t* mux){
     uint8_t data; 
 
     send_start_i2c();
@@ -45,7 +45,7 @@ Enable all channels on the specified mux
  */
 void enable_all_mux_channels(mux_t* mux){
     send_start_i2c();
-    send_addr_i2c((MUX_CONTROL_BYTE | mux-addr), I2C_WRITE);
+    send_addr_i2c((MUX_CONTROL_BYTE | mux->addr), I2C_WRITE);
     send_data_i2c(0xFF, I2C_ACK);
     send_stop_i2c();
 }
@@ -56,7 +56,7 @@ Equivalent to resetting the mux, probably slower
  */
 void disable_all_mux_channels(mux_t* mux){
     send_start_i2c();
-    send_addr_i2c((MUX_CONTROL_BYTE | mux-addr), I2C_WRITE);
+    send_addr_i2c((MUX_CONTROL_BYTE | mux->addr), I2C_WRITE);
     send_data_i2c(0x00, I2C_ACK);
     send_stop_i2c();
 }

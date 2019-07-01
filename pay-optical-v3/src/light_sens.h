@@ -49,16 +49,16 @@ single-block I2C transaction"
 #define LSENSE_ATIME_MASK   0xF8
 
 typedef enum {
-    LS_CH0 = 0,
-    LS_CH1 = 1
-} light_sense_ch_t;
+    LS_DISABLED = 0,
+    LS_ENABLED = 1
+} light_sensor_state_t;
 
 typedef enum {
     LS_LOW_GAIN = 0b00,
     LS_MED_GAIN = 0b01,
     LS_HIGH_GAIN = 0b10,
     LS_MAX_GAIN = 0b11
-} light_sense_again_t;
+} light_sensor_again_t;
 
 typedef enum {
     LS_100ms = 0b000,
@@ -67,6 +67,30 @@ typedef enum {
     LS_400ms = 0b011,
     LS_500ms = 0b100,
     LS_600ms = 0b101
-} light_sense_atime_t;
+} light_sensor_atime_t;
+
+// TSL2591 device
+typedef struct {
+    // 0 == disabled, 1 == enabled
+    light_sensor_state_t state;
+
+    light_sensor_again_t gain;
+    light_sensor_atime_t time;
+
+    uint16_t last_ch0_reading;
+    uint16_t last_ch1_reading;
+} light_sensor_t;
+
+/* FUNCTION PROTOTYPES */
+void write_light_sense_register(uint8_t addr, uint8_t data);
+uint8_t read_light_sense_register(uint8_t addr);
+void get_light_sense_read_only(uint8_t* data);
+
+void init_light_sensor(light_sensor_t* light_sens);
+void sleep_light_sensor(light_sensor_t* light_sens);
+void wake_light_sensor(light_sensor_t* light_sens);
+void get_light_sensor_readings(light_sensor_t* light_sens);
+void set_light_sensor_again(light_sensor_t* light_sens);
+void set_light_sensor_atime(light_sensor_t* light_sens);
 
 #endif

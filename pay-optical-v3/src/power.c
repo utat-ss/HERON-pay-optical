@@ -6,22 +6,9 @@ pin_info_t load_switch_en = {
     .pin = LOAD_SWITCH_PIN
 };
 
-/*
-Execute all important initializations for the board upon power-up
-*/
-void init_board(){
-    init_uart();
-    print("-- UART initialized\n");
-    init_power();
-    print("-- Power initialized\n");
-    init_i2c();
-    print("-- I2C initialized\n");
-    init_opt_pex();     // TODO: change to all pex once LED implemented
-    print("-- Port expanders initialized\n");
-}
 
 /*
-Initialize the power modules
+Initialize the power module
 */
 void init_power(){
     init_adc();
@@ -29,18 +16,67 @@ void init_power(){
 }
 
 /*
+Execute all important initializations for the board upon power-up
+*/
+void init_board(){
+    init_uart();
+    print("-- UART initialized\n");
+    init_power();
+    print("-- Power module initialized\n");
+    init_i2c();
+    print("-- I2C initialized\n");
+    init_board_sensors();
+}
+
+/*
+Power cycle the board sensors and initialize them
+*/
+void init_board_sensors(){
+    // Ensure that the sensors have been reset
+    print("-- Power cycling the sensor ICs\n");
+    disable_sensor_power();
+    enable_sensor_power();
+
+    init_opt_pex();     // TODO: change to all pex once LED implemented
+    print("-- Port expanders initialized\n");
+    init_opt_sensors();
+    print("-- Light sensors initialized\n");
+}
+
+/*
+Disable the power supply to the sensors
+*/
+void disable_sensor_power(){
+    set_pin_low(load_switch_en.pin, load_switch_en.port);
+    // testing showed that it took around 350 ms for the board to discharge
+    _delay_ms(350);
+}
+
+/*
+Enable the power supply to the sensors
+*/
+void enable_sensor_power(){
+    set_pin_high(load_switch_en.pin, load_switch_en.port);
+    // testing showed that it took < 1 ms for the board to charge
+    _delay_ms(1);
+}
+
+/*
 Puts the optical board into sleep mode
 TODO: implement sleep mode on the micro
 */
 void enter_sleep_mode(){
-    set_pin_low(load_switch_en.pin, load_switch_en.port);
+    disable_sensor_power();
     // TODO: do something with the micro
 }
 
+/*
+Takes the optical board out of sleep mode
+*/
 void enter_normal_mode(){
-    set_pin_high(load_switch_en.pin, load_switch_en.port);
-    // Re-initialize the entire board
-    init_board();
+    enable_sensor_power();
+    init_board_sensors();
+    // do something with the micro
 }
 
 /*
