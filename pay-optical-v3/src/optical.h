@@ -2,6 +2,7 @@
 #define OPTICAL_H
 
 #include <pex/pex.h>
+#include <stdint.h>
 #include <i2c/i2c.h>
 
 /* PORT EXPANDER ADDRESSES (HARDWARE) */

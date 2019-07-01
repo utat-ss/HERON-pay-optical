@@ -4,7 +4,7 @@
 # AVR-GCC compiler
 CC = avr-gcc
 # Compiler flags
-CFLAGS = -Wall -std=gnu99 -g -mmcu=atmega8a -Os -mcall-prologues
+CFLAGS = -Wall -std=gnu99 -Wl,-u,vfprintf -g -mmcu=atmega8a -Os -mcall-prologues
 # Includes (header files)
 INCLUDES = -I./lib-common-ported/include/
 # Programmer
@@ -18,7 +18,7 @@ PROG = pay_optical
 
 # Libraries from lib-common to link
 # May need to change this line
-LIB = -L./lib-common-ported/lib -lpex -luart -lspi -li2c -lstack -lqueue -lutilities
+LIB = -L./lib-common-ported/lib -lpex -luart -lspi -li2c -lstack -lqueue -lutilities -lprintf_flt -lm
 
 # Detect operating system - based on https://gist.github.com/sighingnow/deee806603ec9274fd47
 
