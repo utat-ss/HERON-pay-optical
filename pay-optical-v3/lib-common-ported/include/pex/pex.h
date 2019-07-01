@@ -28,7 +28,7 @@
 // Bit 3 sets hardware addressing
 
 // 7-bit control "byte" for writing and reading registers, see page 15
-// Bit[2:0] should be masked with the device address
+// Bit[2:0] should be OR'd with the device address
 // Does not include r/~w bit, that's handled by I2C
 #define PEX_CONTROL_BYTE  0b0100000
 

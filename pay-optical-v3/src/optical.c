@@ -100,7 +100,6 @@ void set_led(uint8_t pos, pay_board_t board, led_state_t state){
 
     // read the current GPIO state
     uint16_t gpio_state = get_pex_bank_pair(pex, PEX_GPIO_A);
-    print("-- Read 0x%04X from PEX\n", gpio_state);
 
     switch (state){
         case LED_ON:
@@ -115,7 +114,6 @@ void set_led(uint8_t pos, pay_board_t board, led_state_t state){
     }
 
     // write back the desired LED state
-    print("-- Writing 0x%04X to PEX\n", gpio_state);
     set_pex_bank_pair(pex, PEX_GPIO_A, gpio_state);
 }
 

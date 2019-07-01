@@ -93,7 +93,7 @@ uint8_t read_pex_register(pex_t* pex, uint8_t addr) {
 /*
 Returns a read of bank A and B for a particular address pair
 Assumes the bank A address is given
-High byte return is bank B, low byte is bank A, MSB first
+High byte return is bank A, low byte is bank B, MSB first
 */
 uint16_t get_pex_bank_pair(pex_t* pex, uint8_t addr){
     // See page 13 for a description of this mode
@@ -106,12 +106,9 @@ uint16_t get_pex_bank_pair(pex_t* pex, uint8_t addr){
     send_data_i2c(addr, I2C_ACK);
     send_start_i2c();
     send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_READ);
-    read_data_i2c(&retl, I2C_ACK);
-    read_data_i2c(&reth, I2C_NACK);
+    read_data_i2c(&reth, I2C_ACK);
+    read_data_i2c(&retl, I2C_NACK);
     send_stop_i2c();
-
-    print("reth shifted is: 0x%04X\n", (reth << 8));
-    print("retl is: 0x%02X\n", retl);
 
     return (uint16_t)((reth << 8) | retl);
 }
@@ -119,7 +116,7 @@ uint16_t get_pex_bank_pair(pex_t* pex, uint8_t addr){
 /*
 Writes to both bank A and B for a particular address pair
 Assumes bank A address is given
-High byte of data is bank B, low byte is bank A
+High byte of data is bank A, low byte is bank B
 */
 void set_pex_bank_pair(pex_t* pex, uint8_t addr, uint16_t data){
     // See page 13 for a description of this mode
@@ -127,8 +124,8 @@ void set_pex_bank_pair(pex_t* pex, uint8_t addr, uint16_t data){
     send_start_i2c();
     send_addr_i2c((PEX_CONTROL_BYTE | (pex->addr)), I2C_WRITE);
     send_data_i2c(addr, I2C_ACK);
-    send_data_i2c((uint8_t)(data), I2C_ACK);
     send_data_i2c((uint8_t)(data >> 8), I2C_ACK);
+    send_data_i2c((uint8_t)(data), I2C_ACK);
     send_stop_i2c();
 }
 
