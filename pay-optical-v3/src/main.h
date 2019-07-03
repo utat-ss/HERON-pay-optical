@@ -12,4 +12,4 @@
 #include "power.h"
 
 
-void print_power_usage(void);
+void print_power_info(void);

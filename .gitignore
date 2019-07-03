@@ -24,4 +24,4 @@ xcuserdata
 .settings
 
 # vscode files
-*.vscode*
+.vscode
