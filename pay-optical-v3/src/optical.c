@@ -1,6 +1,6 @@
 #include "optical.h"
 
-/* PORT EXPANDER AND MUX OBJECTS */
+/* PORT EXPANDER OBJECTS */
 pex_t OPT_PEX1 = {
     .addr = OPTICAL_PEX1_ADDR,
     .rst = NULL
@@ -21,6 +21,53 @@ pex_t LED_PEX2 = {
     .rst = NULL
 };
 
+/* MUX OBJECTS */
+pin_info_t I2C_MUX1_RST = {
+    .port = &PORTC,
+    .ddr = &DDRC,
+    .pin = PC3
+};
+
+pin_info_t I2C_MUX2_RST = {
+    .port = &PORTC,
+    .ddr = &DDRC,
+    .pin = PC2
+};
+
+pin_info_t I2C_MUX3_RST = {
+    .port = &PORTC,
+    .ddr = &DDRC,
+    .pin = PC1
+};
+
+pin_info_t I2C_MUX4_RST = {
+    .port = &PORTC,
+    .ddr = &DDRC,
+    .pin = PC0
+};
+
+mux_t OPT_MUX1 = {
+    .addr = I2C_MUX1_ADDR,
+    .rst = &I2C_MUX1_RST
+};
+
+mux_t OPT_MUX2 = {
+    .addr = I2C_MUX2_ADDR,
+    .rst = &I2C_MUX2_RST
+};
+
+mux_t OPT_MUX3 = {
+    .addr = I2C_MUX3_ADDR,
+    .rst = &I2C_MUX3_RST
+};
+
+mux_t OPT_MUX4 = {
+    .addr = I2C_MUX4_ADDR,
+    .rst = &I2C_MUX4_RST
+};
+
+/* OPTICAL SENSORS */
+
 light_sensor_t opt_sensors[32];
 
 /*
@@ -32,14 +79,106 @@ void init_opt_sensors(void){
     }
 }
 
+/*
+Return the sensor reading for channel pos of type meas
+bits[25:24] are gain
+bits[18:16] are integration time
+*/
+uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board){
+    mux_t* mux = NULL;
+    uint8_t channel = pos % 8;
+    uint32_t ret = 0;
 
+    switch (pos/8) {
+        case 0:
+            mux = &OPT_MUX1;
+            break;
+        case 1:
+            mux = &OPT_MUX2;
+            break;
+        case 2:
+            mux = &OPT_MUX3;
+            break;
+        case 3:
+            mux = &OPT_MUX4;
+            break;
+        default:
+            // ya goofed
+            return ret;
+    }
+
+    set_led(pos, board, LED_ON);
+    set_mux_channel(mux, channel);
+
+    calibrate_opt_sensor_sensitivity(opt_sensors + pos); 
+
+    disable_all_mux_channels(mux);      
+    set_led(pos, board, LED_OFF);
+
+    // TODO: do something smarter
+    ret = opt_sensors[pos].last_ch0_reading | ((uint32_t)(opt_sensors[pos].time) << 16) | ((uint32_t)(opt_sensors[pos].gain) << 24);
+
+    return ret;
+}
 
 /*
 Take readings from the optical sensor and calibrate gain and integration time
 to extract maximum dynamic range
 */
 void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
+    float last_reading = 0.0;
+    uint8_t calibrated = 0;
 
+    get_light_sensor_readings(light_sens);
+    last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
+
+    if ((last_reading > OPT_SENS_LOW_THRES) && (last_reading < OPT_SENS_HIGH_THRES)){
+        calibrated = 1;
+    }
+
+    while (!calibrated){
+        // TODO: surely there is a more elegant way to do this
+        get_light_sensor_readings(light_sens);
+        last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
+
+        if (last_reading < OPT_SENS_LOW_THRES){
+            if (light_sens->time != LS_600ms){
+                light_sens->time += 1;                  // move to higher integration time
+                set_light_sensor_atime(light_sens);     // write new value
+                continue;
+            } else if (light_sens->gain != LS_MAX_GAIN){
+                light_sens->gain += 1;
+                light_sens->time = LS_200ms;
+                set_light_sensor_again(light_sens);     // move to higher gain range
+                set_light_sensor_atime(light_sens);     // move to lowest integration time
+                continue;
+            } else {
+                calibrated = 1;                      // nothing we can do, measurement undersaturated
+                break;
+            }
+        } else if (last_reading > OPT_SENS_HIGH_THRES){
+            if (light_sens->time != LS_200ms){
+                light_sens->time -= 1;                  // move to lower integration time
+                set_light_sensor_atime(light_sens);     // write value
+                continue;
+            } else if (light_sens->gain != LS_LOW_GAIN){
+                light_sens->gain -= 1;                  
+                light_sens->time = LS_600ms;            
+                set_light_sensor_again(light_sens);     // move to lower gain value
+                set_light_sensor_atime(light_sens);     // move to highest integration time
+                continue;
+            } else {
+                calibrated = 1;
+                break;                                  // nothing to do
+            }
+        } else {
+            // yay we did it! sensor is calibrated
+            calibrated = 1;
+            break;
+        }
+    }
+  
+    // calling function should pull the last sensor value from light_sens
 }
 
 /*

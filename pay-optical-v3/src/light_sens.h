@@ -54,19 +54,19 @@ typedef enum {
 } light_sensor_state_t;
 
 typedef enum {
-    LS_LOW_GAIN = 0b00,
-    LS_MED_GAIN = 0b01,
-    LS_HIGH_GAIN = 0b10,
-    LS_MAX_GAIN = 0b11
+    LS_LOW_GAIN =   0b00,
+    LS_MED_GAIN =   0b01,
+    LS_HIGH_GAIN =  0b10,
+    LS_MAX_GAIN =   0b11
 } light_sensor_again_t;
 
 typedef enum {
-    LS_100ms = 0b000,
-    LS_200ms = 0b001,
-    LS_300ms = 0b010,
-    LS_400ms = 0b011,
-    LS_500ms = 0b100,
-    LS_600ms = 0b101
+    LS_100ms =  0b000,
+    LS_200ms =  0b001,
+    LS_300ms =  0b010,
+    LS_400ms =  0b011,
+    LS_500ms =  0b100,
+    LS_600ms =  0b101
 } light_sensor_atime_t;
 
 // TSL2591 device

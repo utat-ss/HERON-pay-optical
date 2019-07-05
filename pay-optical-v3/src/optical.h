@@ -3,6 +3,7 @@
 
 #include <pex/pex.h>
 #include <stdint.h>
+#include <uart/uart.h>
 #include <i2c/i2c.h>
 #include "i2c_mux.h"
 #include "light_sens.h"
@@ -19,16 +20,29 @@
 #define I2C_MUX3_ADDR           0b010
 #define I2C_MUX4_ADDR           0b011
 
+/* CALIBRATION DEFINES */
+// hysteresis thresholds, to stop it from calibrating when it's at the edge
+#define OPT_SENS_HYST_LOW_THRES      0.1
+#define OPT_SENS_HYST_HIGH_THRES     0.9
+
+#define OPT_SENS_LOW_THRES           0.3
+#define OPT_SENS_HIGH_THRES          0.7
+
 /* QUALITY OF LIFE DEFINES */
 typedef enum {
-    PAY_OPTICAL,
-    PAY_LED
+    PAY_OPTICAL = 0,
+    PAY_LED = 1
 } pay_board_t;
 
 typedef enum {
     LED_ON  = 1,
     LED_OFF = 0
 } led_state_t;
+
+typedef enum {
+    FLUOR_MEAS = 0,
+    OD_MEAS = 1
+} meas_type_t;
 
 /* To be implemented:
 
