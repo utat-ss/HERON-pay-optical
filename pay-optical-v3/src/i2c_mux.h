@@ -3,6 +3,7 @@
 
 #include <i2c/i2c.h>
 #include <utilities/utilities.h>
+#include <uart/uart.h>
 
 typedef struct {
     uint8_t addr;
@@ -16,6 +17,7 @@ typedef struct {
 #define MUX_CONTROL_BYTE    0b1110000
 
 /* FUNCTION PROTOTYPES */
+void init_mux(mux_t* mux);
 void reset_mux(mux_t* mux);
 void set_mux_channel(mux_t* mux, uint8_t channel);
 uint8_t get_mux_channels(mux_t* mux);

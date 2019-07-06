@@ -96,6 +96,8 @@ void get_light_sensor_readings(light_sensor_t* light_sens){
     uint16_t ch0_reading = 0;
     uint16_t ch1_reading = 0;
 
+    while (!(read_light_sense_register(LSENSE_STATUS) & 0x01));
+
     send_start_i2c();
     send_addr_i2c(LSENSE_ADDRESS, I2C_WRITE);
     send_data_i2c((LSENSE_COMMAND_BYTE | LSENSE_C0DATAL), I2C_ACK);

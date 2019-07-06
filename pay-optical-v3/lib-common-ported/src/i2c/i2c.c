@@ -30,21 +30,30 @@ void init_i2c(void){
     TWCR |= _BV(TWEN);                                  // enable I2C. somewhat irrelevant since it's set in every other function
 }
 
+uint8_t wait_and_check_status(uint8_t status){
+    uint16_t timeout = UINT16_MAX;
+
+    while(!(TWCR & _BV(TWINT)) && timeout--);
+    if (!timeout) return 1;                     // return timeout error
+    if ((TWSR & I2C_PRESCALER_MASK) != status){
+        return (TWSR & I2C_PRESCALER_MASK);     // return status that generated error
+    } else {
+        return 0;
+    }
+}
+
 /*
 Request to send a START condition on the I2C bus
 */
 uint8_t send_start_i2c(void){
-    uint16_t timeout = UINT16_MAX;
-
     TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN);         // request to send a START condition on the bus
-    while(!(TWCR & _BV(TWINT)) && timeout--);
-    if (!timeout) return 1;                             // return timeout error
-    if (((TWSR & I2C_PRESCALER_MASK) != I2C_START) || ((TWSR & I2C_PRESCALER_MASK) != I2C_RSTART)){
-        return (TWSR & I2C_PRESCALER_MASK);             // return status that generated error
+    uint8_t status = wait_and_check_status(I2C_START);
+    if (status == I2C_RSTART){
+        return 0;
+    } else {
+        return status;
     }
-    return 0;
 }
-
 
 /*
 Writes an address onto the I2C bus as master
@@ -52,28 +61,20 @@ addr: 7 bit address
 read_or_write: read/~write
 */
 uint8_t send_addr_i2c(uint8_t addr, uint8_t read_or_write){
-    uint16_t timeout = UINT16_MAX;
     uint8_t slave_addr = (addr << 1) | read_or_write;
     uint8_t status = 0;
 
     // set expected return status
-    switch (read_or_write){
-        case I2C_READ:
-            status = I2C_SLAR_ACK;
-            break;
-        case I2C_WRITE:
-            status = I2C_SLAW_ACK;
-            break;
+    if (read_or_write == I2C_READ){
+        status = I2C_SLAR_ACK;
+    } else {
+        status = I2C_SLAW_ACK;
     }
 
     TWDR = slave_addr;                          // load slave address
     TWCR = _BV(TWINT) | _BV(TWEN);              // clear int flag to transmit data register
-    while(!(TWCR & _BV(TWINT)) && timeout--);
-    if (!timeout) return 1;                     // return timeout error
-    if ((TWSR & I2C_PRESCALER_MASK) != status){
-        return (TWSR & I2C_PRESCALER_MASK);     // return status that generated error
-    }
-    return 0;
+    
+    return wait_and_check_status(status);
 }
 
 /*
@@ -82,27 +83,19 @@ data: data to send
 ack: expect ack/~nack
 */
 uint8_t send_data_i2c(uint8_t data, uint8_t ack){
-    uint16_t timeout = UINT16_MAX;
     uint8_t status = 0;
 
     // set expected return status
-    switch (ack){
-        case I2C_ACK:
-            status = I2C_DATA_ACK;
-            break;
-        case I2C_NACK:
-            status = I2C_DATA_NACK;
-            break;
+    if (ack == I2C_ACK){
+        status = I2C_DATA_ACK;
+    } else {
+        status = I2C_DATA_NACK;
     }
 
     TWDR = data;                                // load data to send
     TWCR = _BV(TWINT) | _BV(TWEN);              // clear int flag to transmit data register        
-    while(!(TWCR & _BV(TWINT)) && timeout--);
-    if (!timeout) return 1;                     // return timeout error
-    if ((TWSR & I2C_PRESCALER_MASK) != status){
-        return (TWSR & I2C_PRESCALER_MASK);     // return status that generated error
-    }
-    return 0;
+
+    return wait_and_check_status(status);
 
 }
 
@@ -112,7 +105,6 @@ data: pointer to where data will be stored (return is used for error handling)
 ack: send ack/~nack, NACK indicates end of transmission to the slave
 */
 uint8_t read_data_i2c(uint8_t* data, uint8_t ack){
-    uint16_t timeout = UINT16_MAX;
     uint8_t status = 0;
 
     // set expected return status
@@ -126,14 +118,11 @@ uint8_t read_data_i2c(uint8_t* data, uint8_t ack){
     }
 
     TWCR = _BV(TWINT) | (ack << TWEA) | _BV(TWEN);         // request data and return ack/~nack
-    while(!(TWCR & _BV(TWINT)) && timeout--);
-    if(!timeout) return 1;
-    if ((TWSR & I2C_PRESCALER_MASK) != status){
-        *data = TWDR;                           // might not be correct, we'll see
-        return (TWSR & I2C_PRESCALER_MASK);     // return status that generated error
-    }
+    
+    uint8_t ret_status = wait_and_check_status(status);
     *data = TWDR;
-    return 0;
+
+    return ret_status;
 }
 
 /*
@@ -152,12 +141,7 @@ uint8_t send_stop_i2c(void){
 "Handles" an I2C error
 */
 void handle_error_i2c(uint8_t status_code){
-    switch (status_code){
-        case I2C_BUS_ERROR:
-            TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN);    // clears an I2C bus error
-            break;
-        default:
-            print("I2C error occured with code: 0x%02X", status_code);
-            break;
-    }
+    if (status_code == I2C_BUS_ERROR){
+        TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN);    // clears an I2C bus error
+    } // no other handling yet
 }

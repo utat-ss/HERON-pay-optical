@@ -47,10 +47,7 @@ void reset_pex(pex_t* pex) {
         _delay_ms(1); // minimum 1 microsecond
         set_cs_high(pex->rst->pin, pex->rst->port);
         _delay_ms(1);
-    } else {
-        print("Error: RST not connected on PEX");
-    }
-
+    } // should print an error
 }
 
  /*

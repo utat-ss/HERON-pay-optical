@@ -1,5 +1,13 @@
 #include "i2c_mux.h"
 
+
+/*
+Initialize the MUX rst
+*/
+void init_mux(mux_t* mux){
+    init_output_pin(mux->rst->pin, mux->rst->ddr, 1);
+}
+
 /*
 Reset the MUX and downstream I2C busses
 See pg 7 of the datasheet for reset timing spec (6 ns)

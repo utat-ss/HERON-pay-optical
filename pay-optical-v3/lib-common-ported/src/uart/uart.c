@@ -12,7 +12,7 @@ user-friendly terminal).
 #include <string.h>
 
 // Maximum number of characters the UART RX buffer can store
-#define UART_MAX_RX_BUF_SIZE    50
+#define UART_MAX_RX_BUF_SIZE    20
 #define UBRR    (uint16_t)(UART_F_IO/16/UART_DEF_BAUD_RATE-1)
 
 // Buffer of received characters

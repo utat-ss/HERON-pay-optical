@@ -37,6 +37,7 @@
 #define I2C_RDATA_NACK      0x58    // Data byte received, NACK returned
 
 void init_i2c(void);
+uint8_t wait_and_check_status(uint8_t status);
 uint8_t send_start_i2c(void);
 uint8_t send_addr_i2c(uint8_t addr, uint8_t read_or_write);
 uint8_t send_data_i2c(uint8_t data, uint8_t ack);

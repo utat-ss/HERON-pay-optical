@@ -20,12 +20,13 @@ Execute all important initializations for the board upon power-up
 */
 void init_board(){
     init_uart();
-    print("-- UART initialized\n");
+    //print("-- UART initialized\n");
     init_power();
-    print("-- Power module initialized\n");
+    //print("-- Power module initialized\n");
     init_i2c();
-    print("-- I2C initialized\n");
+    //print("-- I2C initialized\n");
     init_board_sensors();
+    print("-- Board initialized\n");
 }
 
 /*
@@ -33,14 +34,16 @@ Power cycle the board sensors and initialize them
 */
 void init_board_sensors(){
     // Ensure that the sensors have been reset
-    print("-- Power cycling the sensor ICs\n");
+    //print("-- Power cycling the sensor ICs\n");
     disable_sensor_power();
     enable_sensor_power();
 
-    init_opt_pex();     // TODO: change to all pex once LED implemented
-    print("-- Port expanders initialized\n");
+    init_all_pex();     // TODO: change to all pex once LED implemented
+    //print("-- Port expanders initialized\n");
+    init_all_mux();
+    // print("-- Mux's initialized\n");
     init_opt_sensors();
-    print("-- Light sensors initialized\n");
+    //print("-- Light sensors initialized\n");
 }
 
 /*

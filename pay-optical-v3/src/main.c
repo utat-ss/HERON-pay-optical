@@ -1,22 +1,20 @@
 #include "main.h"
 
+
+
 int main(void) {
+	uint32_t data = 0;
+	uint8_t gain = 0;
+	uint8_t time = 0;
+
 	init_board();
 
-    while (1) {
-		all_off();
-		_delay_ms(2000);
-		print_power_info();
-		all_on();
-		_delay_ms(2000);
-		print_power_info();
+	for (uint8_t i = 0; i < 32; i++){
+		data = get_opt_sensor_reading(i, PAY_OPTICAL);
+		gain = (uint8_t)(data >> 24);
+		time = (uint8_t)((data >> 16) & 0x00FF);
+		print("-- ,Sensor: %2d, Gain: %02X, Time: %02X, Value: %lu,\n", i, gain, time, (data & 0x0000FFFF));
 	}
-}
-
-void print_power_info(){
-	print("-- Current draw %.3f\n", power_read_current());
-	print("-- Sensor voltage %.3f\n", power_read_voltage());
-	print("-- Sensor power %.3f\n\n", power_read_power());
 }
 
 
