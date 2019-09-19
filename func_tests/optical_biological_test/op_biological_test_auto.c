@@ -8,6 +8,10 @@
 #define CH5_EN_PORT		PORTC
 #define CH5_EN_DDR		DDRC
 #define CH5_EN			  PIN2
+#define NUM_READINGS  10
+#define NUM_SAMPLES   10
+
+uint8_t gain = 1;
 
 void read_values(uint8_t well_num, uint8_t channel_num);
 void sweep_thru_channels(uint8_t);
@@ -27,23 +31,33 @@ void print_columns(void){
   print("\nWell,\tSensor,\tHex,\tPercent,\tVoltage,\n");
 }
 
+
 void read_values(uint8_t well_num, uint8_t channel_num){
-  uint32_t data = opt_adc_read_sync();
-  print("%d,\t%d,\t", well_num, channel_num);
-  print("%06lX,\t%.6f,\t", data, (double) ((double) data / (double) 0xFFFFFF * 100.0));
-  print("%.6f\n", -1.0 * opt_adc_raw_data_to_diff_vol(data, 1));
+  double voltage = 0.0;
+  uint32_t data = 0;
+  for (uint8_t j = 0; j < NUM_READINGS; j++){
+    data = opt_adc_read_sync();
+    voltage += (opt_adc_raw_data_to_diff_vol(data, gain))/(double)NUM_SAMPLES;
+    if (!((j+1) % NUM_SAMPLES)) { 
+      print("%d,\t%d,\t", well_num, channel_num);
+      print("%.6f\n", -1.0 * voltage);
+      voltage = 0;
+    }
+  }
+  // print("%d,\t%d,\t", well_num, channel_num);
+  // print("%06lX,\t%.6f,\t", data, (double) ((double) data / (double) 0xFFFFFF * 100.0));
+  // print("%.6f\n", -1.0 * voltage);
 }
 
 void sweep_thru_channels(uint8_t num){
   //print("--Optical ADC A%d initialized\n\n", num);
   print_columns();
-  for (uint8_t i = 0; i < 8; i++){
+  for (uint8_t i = 0; i < 4; i++){
     uint8_t a = channels[num-1][i];
     // Initialize the differential pair corresponding to the bank number
     opt_adc_enable_mux(a - 1);
-    for (uint8_t j = 0; j < 10; j++){
-      read_values(i, a);
-    }
+    read_values(i, a);
+    _delay_ms(1000);
   }
   opt_adc_disable_mux();
 }
@@ -53,7 +67,6 @@ void sweep_thru_channels(uint8_t num){
 uint8_t rx_command(const uint8_t* buf, uint8_t len){
   static uint8_t echo = 0;
   static uint8_t gains[] = {1, 8, 16, 32, 64, 128};
-  uint8_t gain;
   uint8_t recieved;
 
   if (echo){
@@ -88,7 +101,6 @@ uint8_t rx_command(const uint8_t* buf, uint8_t len){
 }
 
 
-
 int main(void){
   init_uart();
   set_uart_rx_cb(rx_command);
@@ -115,6 +127,9 @@ int main(void){
   opt_adc_init_sync(0); // A1 channel
   print("--Selected bank A1\n");
   syncdemod_enable_rclk(SD1_CS_PIN);
+  // syncdemod_enable_rclk(SD2_CS_PIN);
+  // syncdemod_enable_rclk(SD3_CS_PIN);
+  // syncdemod_enable_rclk(SD4_CS_PIN);
   print("--Enabled RCLK1\n");
 
   while(1){}
