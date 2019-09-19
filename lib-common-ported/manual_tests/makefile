@@ -63,7 +63,6 @@ ifeq ($(MAC_OS), true)
 endif
 ifeq ($(LINUX), true)
 	# lower number
-	# TODO - test this
 	PORT = $(shell find /dev -name 'ttyS[0-9]*' | sort | head -n1)
 endif
 
@@ -149,3 +148,9 @@ endif
 # Upload .hex program to device
 upload: $(PROG)
 	avrdude -p $(DEVICE) -c $(PGMR) -C $(LIB_COMMON)/avrdude.conf -P $(PORT) -U flash:w:./$^.hex
+
+# Upload .hex program to device, using a precompiled binary that must already be
+# in the folder and be named $(PROG).hex
+# (does not compile anything, just uploads the hex file)
+upload_bin:
+	avrdude -p $(DEVICE) -c $(PGMR) -C $(LIB_COMMON)/avrdude.conf -P $(PORT) -U flash:w:./$(PROG).hex

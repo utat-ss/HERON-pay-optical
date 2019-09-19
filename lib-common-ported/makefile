@@ -13,6 +13,9 @@ MANUAL_TESTS = $(dir $(wildcard manual_tests/*/.))
 MCU = 8a
 # AVR device for avrdude uploading - must be prefixed with "m"
 DEVICE = m$(MCU)
+# Harness testing folder
+TEST = harness_tests
+# HARNESS_ARGS - can specify from the command line when calling `make`
 
 export CC = avr-gcc
 export AR = avr-ar
@@ -46,7 +49,6 @@ endif
 ifeq ($(WINDOWS), true)
 	# higher number
 	PORT = $(shell powershell "[System.IO.Ports.SerialPort]::getportnames() | sort | select -First 2 | select -Last 1")
-	# TODO Not sure if this actually works for windows
 	UART = $(shell powershell "[System.IO.Ports.SerialPort]::getportnames() | sort | select -First 1")
 endif
 ifeq ($(MAC_OS), true)
@@ -56,7 +58,6 @@ ifeq ($(MAC_OS), true)
 endif
 ifeq ($(LINUX), true)
 	# lower number
-	# TODO - test this
 	PORT = $(shell find /dev -name 'ttyS[0-9]*' | sort | head -n1)
 	UART = $(shell find /dev -name 'ttyS[0-9]*' | sort | sed -n 2p)
 endif
@@ -117,6 +118,12 @@ debug:
 	@echo ------------
 	@echo $(MANUAL_TESTS)
 	@echo ------------
+	@echo $(MCU)
+	@echo ------------
+	@echo $(DEVICE)
+	@echo ------------
+	@echo $(TEST)
+	@echo ------------
 	@echo $(WINDOWS)
 	@echo ------------
 	@echo $(MAC_OS)
@@ -141,7 +148,7 @@ examples:
 	done
 
 harness:
-	$(PYTHON) ./bin/harness.py -p $(PORT) -u $(UART) -d $(TEST)
+	$(PYTHON) ./bin/harness.py -p $(PORT) -u $(UART) -d $(TEST) $(HARNESS_ARGS)
 
 help:
 	@echo "usage: make [all | clean | debug | examples | harness | help | manual_tests | read-eeprom]"
