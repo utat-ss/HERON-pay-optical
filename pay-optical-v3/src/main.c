@@ -1,6 +1,6 @@
 #include "main.h"
 
-
+// TODO - watchdog?
 
 int main(void) {
 	uint32_t data = 0;
