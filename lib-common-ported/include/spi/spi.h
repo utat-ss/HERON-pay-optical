@@ -1,6 +1,10 @@
 #ifndef SPI_H
 #define SPI_H
 
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
+#endif 
+
 #include <avr/io.h>
 #include <string.h>
 

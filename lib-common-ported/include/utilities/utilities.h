@@ -9,8 +9,8 @@
 #define F_CPU 8000000UL
 #endif
 
-#ifndef __AVR_ATmega8A__ 
-#define __AVR_ATmega8A__
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
 #endif 
 
 #include <util/delay.h>

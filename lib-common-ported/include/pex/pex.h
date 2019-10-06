@@ -1,6 +1,10 @@
 #ifndef PEX_H
 #define PEX_H
 
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
+#endif 
+
 #include <i2c/i2c.h>
 #include <spi/spi.h>
 #include <uart/uart.h>

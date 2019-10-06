@@ -99,6 +99,7 @@ void read_opt_sensor_test(uint8_t pos){
 Return the sensor reading for channel pos of type meas
 bits[25:24] are gain
 bits[18:16] are integration time
+bits[15:0] are the data
 */
 uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board){
     mux_t* mux = NULL;

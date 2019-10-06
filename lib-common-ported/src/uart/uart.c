@@ -12,7 +12,7 @@ user-friendly terminal).
 #include <string.h>
 
 // Maximum number of characters the UART RX buffer can store
-#define UART_MAX_RX_BUF_SIZE    20
+#define UART_MAX_RX_BUF_SIZE    50
 #define UBRR    (uint16_t)(UART_F_IO/16/UART_DEF_BAUD_RATE-1)
 
 // Buffer of received characters
@@ -42,8 +42,8 @@ void init_uart(void) {
     // Set UART to use 8 data bits
     UCSRC |= _BV(URSEL) | _BV(UCSZ1) | _BV(UCSZ0);
     // set UBBR to 8 
-    UBRRH = (uint8_t)(UBRR >> 8);
-    UBRRL = (uint8_t)UBRR;
+    UBRRH0 = (uint8_t)(UBRR >> 8);
+    UBRRL0 = (uint8_t)UBRR;
 
     // reset RX buffer and counter
     clear_uart_rx_buf();
