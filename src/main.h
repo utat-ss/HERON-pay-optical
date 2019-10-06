@@ -11,5 +11,5 @@
 #include "optical.h"
 #include "power.h"
 
-
-void print_power_info(void);
+uint8_t rx_command(const uint8_t* buf, uint8_t len);
+void get_channel_readings(void);

@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <spi/spi.h>
-#include "optical_adc.h"
 
 // DATA_RDY pin - goes to PAY-SSM to tell it that optical data is ready
 #define DATA_RDY_PIN    PD0
