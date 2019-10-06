@@ -5,6 +5,8 @@
 #include <spi/spi.h>
 
 // DATA_RDY pin - goes to PAY-SSM to tell it that optical data is ready
+
+// I think the pin and port numbers need to change, but not sure were to look on the ATmega32a datasheet
 #define DATA_RDY_PIN    PD0
 #define DATA_RDY_PORT   PORTD
 #define DATA_RDY_DDR    DDRD

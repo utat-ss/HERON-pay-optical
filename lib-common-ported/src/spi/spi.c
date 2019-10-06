@@ -28,11 +28,11 @@ TODO - test more thoroughly - modes and clock frequencies
 
 #include <spi/spi.h>
 
-// SPI pins on microcontroller
-#define CLK     PB7
-#define MISO    PB0
-#define MOSI    PB1
-#define SS      PD3
+// SPI pins on microcontroller, pg 91
+#define CLK     PB5
+#define MISO    PB4
+#define MOSI    PB3
+#define SS      PB2
 
 /*
 Initializes a pin as an output pin for a CS line to control a SPI device.
