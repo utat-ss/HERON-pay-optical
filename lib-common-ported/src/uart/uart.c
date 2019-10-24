@@ -13,7 +13,7 @@ user-friendly terminal).
 
 // Maximum number of characters the UART RX buffer can store
 #define UART_MAX_RX_BUF_SIZE    50
-#define UBRR    (uint16_t)(UART_F_IO/16/UART_DEF_BAUD_RATE-1)
+#define UBRR    (uint16_t)(UART_F_IO/16/UART_DEF_BAUD_RATE - 1)
 
 // Buffer of received characters
 volatile uint8_t uart_rx_buf[UART_MAX_RX_BUF_SIZE];
@@ -34,16 +34,16 @@ No parity bit, 8 bit data, 9600 baud
  */ 
 void init_uart(void) {
     // disable interrupts
-    cli(); 
+    cli();
+    // Set the bit rate register
+    UBRR0H = (uint8_t)(UBRR >> 8);
+    UBRR0L = (uint8_t)UBRR;
     // set doublespeed mode; not needed for 9600 baud
-    // UCSRA |= _BV(U2X);
+    // UCSR0A |= _BV(U2X);
     // Enable RX, TX and RX interrupts
-    UCSRB |= _BV(TXEN) | _BV(RXEN) | _BV(RXCIE);
+    UCSR0B |= _BV(TXEN0) | _BV(RXEN0);
     // Set UART to use 8 data bits
-    UCSRC |= _BV(URSEL) | _BV(UCSZ1) | _BV(UCSZ0);
-    // set UBBR to 8 
-    UBRRH0 = (uint8_t)(UBRR >> 8);
-    UBRRL0 = (uint8_t)UBRR;
+    UCSR0C |= _BV(UCSZ01) | _BV(UCSZ00);
 
     // reset RX buffer and counter
     clear_uart_rx_buf();
@@ -61,8 +61,8 @@ c - character to send
 */
 void put_uart_char(uint8_t c) {
     uint16_t timeout = UINT16_MAX;
-    while (!(UCSRA & _BV(UDRE)) && timeout--);
-    UDR = c;
+    while (!(UCSR0A & _BV(UDRE0)) && timeout--);
+    UDR0 = c;
 }
 
 /*
@@ -73,8 +73,8 @@ Frees up ret val for error handling
 */
 void get_uart_char(uint8_t* c) {
     uint16_t timeout = UINT16_MAX;
-    while (!(UCSRA & _BV(RXC)) && timeout--);
-    *c = UDR;
+    while (!(UCSR0A & _BV(RXC0)) && timeout--);
+    *c = UDR0;
 }
 
 /*
@@ -125,9 +125,9 @@ void clear_uart_rx_buf(void) {
 }
 
 // Interrupt handler that will be called when we receive a character over UART
-ISR(USART_RXC_vect) {
+ISR(USART_RX_vect) {
     // Check if we got the interrupt for a received character (p. 293)
-    if (UCSRA & _BV(RXC)) {
+    if (UCSR0A & _BV(RXC0)) {
         // Fetch the new recieved character
         static uint8_t c;
         // reading the UDR also clears the RXC interrupt flag
