@@ -34,6 +34,8 @@ TODO - test more thoroughly - modes and clock frequencies
 #define MOSI    PB3
 #define SS      PB2
 
+volatile uint8_t spi_spdr_buffer = 0;
+
 /*
 Initializes a pin as an output pin for a CS line to control a SPI device.
 (high output by default)
@@ -56,12 +58,14 @@ void set_cs_high(uint8_t pin, port_t port) {
 // Initializes the SPI library (registers and output pins).
 // Before SPI is enabled, PPRSPI must be 0
 void init_spi(void) {
-    // make CLK, MOSI, and SS pins output
-    DDRB |= _BV(CLK) | _BV(MOSI);
-    DDRD |= _BV(SS);
-    // enable SPI, set mode to master, set SCK freq to f_io/64
-    // TODO - can we run SPI faster? check each SPI device's datasheet for max frequency
-    SPCR |= _BV(SPE) | _BV(MSTR) | _BV(SPR1);
+    // disable all interrupts
+    cli();
+    // make MISO pin output
+    DDRB |= _BV(MISO);
+    // enable SPI as slave
+    SPCR |= _BV(SPE) | _BV(SPIE);
+    // enable all interrupts
+    sei();
 }
 
 /*
@@ -76,6 +80,23 @@ uint8_t send_spi(uint8_t data) {
     // Wait until the finished bit goes high (or times out)
     while (!(SPSR & _BV(SPIF)) && timeout--);
     // Return the received data (contents of the data register)
+    return SPDR;
+}
+
+/*
+Reads the 8 received bits from the SPI data register and places the
+next 8 bits to send into SPDR from spi_spdr_buffer
+Assumes a SPI interrupt has already been generated
+*/
+uint8_t receive_spi(void){
+    uint16_t timeout = UINT16_MAX;
+    while(!(SPSR & _BV(SPIF)) && timeout--);
+    if (!timeout){
+        print("Timeout occurred in SPI\n");
+    }
+    // write the next byte into the buffer
+    SPDR = spi_spdr_buffer;
+    // return the received data
     return SPDR;
 }
 
