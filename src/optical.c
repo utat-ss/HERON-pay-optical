@@ -190,8 +190,8 @@ Initialize all the port expanders
 void init_all_pex(void){
     init_pex_output_low(&OPT_PEX1);
     init_pex_output_low(&OPT_PEX2);
-    //init_pex_output_low(&LED_PEX1);
-    //init_pex_output_low(&LED_PEX2);
+    init_pex_output_low(&LED_PEX1);
+    init_pex_output_low(&LED_PEX2);
 }
 
 /*
@@ -204,6 +204,26 @@ void init_pex_output_low(pex_t* pex){
 }
 
 /*
+Turns on all the LEDs
+*/
+void all_on(pay_board_t board){
+    set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&LED_PEX1, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&LED_PEX2, PEX_GPIO_A, 0xFFFF);
+}
+
+/*
+Turns off all the LEDs
+*/
+void all_off(pay_board_t board){
+    set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&LED_PEX1, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&LED_PEX2, PEX_GPIO_A, 0);
+}
+
+/*
 Sets the LED at pos to the desired state
 pos: uint8_t between 0 and 31
 board: either PAY_OPTICAL or PAY_LED
@@ -213,6 +233,16 @@ void set_led(uint8_t pos, pay_board_t board, led_state_t state){
     pex_t* pex = NULL;
 
     get_pex(&pex, pos, board);
+
+    // fudging to correct for hardware layout of PAY-LED
+    if (board == PAY_LED && pos < 16){
+        if (pos < 8){
+            pos += 8;
+        } else {
+            pos -= 8;
+        }
+    }
+
     pos %= 16;  // get the pos less than 16
 
     // read the current GPIO state
@@ -239,6 +269,15 @@ uint8_t get_led(uint8_t pos, pay_board_t board){
 
     get_pex(&pex, pos, board);
 
+    // fudging to correct for hardware layout of PAY-LED
+    if (board == PAY_LED && pos < 16){
+        if (pos < 8){
+            pos += 8;
+        } else {
+            pos -= 8;
+        }
+    }
+
     // read the current GPIO state
     uint16_t gpio_state = get_pex_bank_pair(pex, PEX_GPIO_A);
     uint8_t state = (gpio_state >> (pos % 16)) & 0x01;
@@ -258,10 +297,14 @@ void get_pex(pex_t** pex, uint8_t pos, pay_board_t board){
             *pex = &OPT_PEX2;
         }
     } else {
-        if (pos < 16){
-            *pex = &LED_PEX1;
-        } else {
+        if (pos < 8){
             *pex = &LED_PEX2;
+        } else if (pos < 16){
+            *pex = &LED_PEX1;
+        } else if (pos < 24){
+            *pex = &LED_PEX2;
+        } else {
+            *pex = &LED_PEX1;
         }
     }
 }

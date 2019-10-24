@@ -1,5 +1,5 @@
-#ifndef __AVR_ATmega8A__ 
-#define __AVR_ATmega8A__
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
 #endif 
 
 #ifndef POWER_H
