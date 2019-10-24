@@ -8,8 +8,10 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <utilities/utilities.h>
+#include <avr/interrupt.h>
 #include <uart/uart.h>
 #include <i2c/i2c.h>
+#include <spi/spi.h>
 #include "optical.h"
 
 

@@ -25,6 +25,8 @@ void init_board(){
     print("-- Power module initialized\n");
     init_i2c();
     print("-- I2C initialized\n");
+    init_spi();
+    print("-- SPI Initialized\n");
     init_board_sensors();
     print("-- Board initialized\n");
 }
@@ -35,8 +37,8 @@ Power cycle the board sensors and initialize them
 void init_board_sensors(){
     // Ensure that the sensors have been reset
     print("-- Power cycling the sensor ICs\n");
-    disable_sensor_power();
-    enable_sensor_power();
+    // disable_sensor_power();
+    // enable_sensor_power();
 
     init_all_pex();     // TODO: change to all pex once LED implemented
     print("-- Port expanders initialized\n");
