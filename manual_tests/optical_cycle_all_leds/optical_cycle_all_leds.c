@@ -29,7 +29,7 @@ void all(void){
 }
 
 int main(void) {
-	init_board();
-    // all();
-    sequence();
+    init_board();
+    all();
+    //sequence();
 }

@@ -19,14 +19,3 @@ int main(void) {
 }
 
 
-ISR(SPI_STC_vect){
-    uint8_t ignore;
-    if (!get_pin_val(PB2, &PORTB)){
-        pin_state = 0;
-    } else {
-        pin_state = 1;
-    }
-    spi_count++;
-    ignore = SPDR;
-}
-

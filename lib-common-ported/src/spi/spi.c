@@ -34,8 +34,6 @@ TODO - test more thoroughly - modes and clock frequencies
 #define MOSI    PB3
 #define SS      PB2
 
-volatile uint8_t spi_spdr_buffer = 0;
-
 /*
 Initializes a pin as an output pin for a CS line to control a SPI device.
 (high output by default)
@@ -80,23 +78,6 @@ uint8_t send_spi(uint8_t data) {
     // Wait until the finished bit goes high (or times out)
     while (!(SPSR & _BV(SPIF)) && timeout--);
     // Return the received data (contents of the data register)
-    return SPDR;
-}
-
-/*
-Reads the 8 received bits from the SPI data register and places the
-next 8 bits to send into SPDR from spi_spdr_buffer
-Assumes a SPI interrupt has already been generated
-*/
-uint8_t receive_spi(void){
-    uint16_t timeout = UINT16_MAX;
-    while(!(SPSR & _BV(SPIF)) && timeout--);
-    if (!timeout){
-        print("Timeout occurred in SPI\n");
-    }
-    // write the next byte into the buffer
-    SPDR = spi_spdr_buffer;
-    // return the received data
     return SPDR;
 }
 
