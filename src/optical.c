@@ -69,6 +69,31 @@ mux_t OPT_MUX4 = {
 /* OPTICAL SENSORS */
 
 light_sensor_t opt_sensors[32];
+well_t wells[32];
+
+/*
+Initialize the global array of wells
+*/
+void init_wells(void){
+    for (uint8_t i = 0; i < 32; i++){
+        (wells + i)->sensor = (opt_sensors + i);
+        init_well_calibration(wells + i);
+    }
+}
+
+/*
+Initialize the well settings
+*/
+void init_well_calibration(well_t* well){
+    light_sensor_setting_t def_settings = {
+        LS_LOW_GAIN,
+        LS_200ms
+    };
+    well->last_led_reading = 0x0000;
+    well->last_opt_reading = 0x0000;
+    well->opt_calib = def_settings;
+    well->led_calib = def_settings;
+}
 
 /*
 Initialize the global array of optical sensors
@@ -96,8 +121,43 @@ void read_opt_sensor_test(uint8_t pos){
 }
 
 /*
+Update the global array of wells with a new reading
+*/
+void update_well_reading(uint8_t pos, pay_board_t board){
+    if (board = PAY_OPTICAL) {
+        write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->opt_calib);
+        (wells + pos)->last_opt_reading = get_opt_sensor_reading(pos, board);
+        (wells + pos)->opt_calib = read_opt_sensor_calibration(opt_sensors + pos);
+    } else {
+        write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->led_calib);
+        (wells + pos)->last_led_reading = get_opt_sensor_reading(pos, board);
+        (wells + pos)->led_calib = read_opt_sensor_calibration(opt_sensors + pos);
+    }
+}
+
+/*
+Update the optical sensor with the given calibration
+*/
+void write_opt_sensor_calibration(light_sensor_t* light_sens, light_sensor_setting_t setting){
+    sleep_light_sensor(light_sens);
+    set_light_sensor_again(setting.gain);
+    set_light_sensor_atime(setting.time);
+    wake_light_sensor(light_sens);
+}
+
+/*
+Read the current optical sensor settings
+*/
+light_sensor_setting_t read_opt_sensor_calibration(light_sensor_t* light_sens){
+    light_sensor_setting_t ret;
+    ret.gain = light_sens->gain;
+    ret.time = light_sens->time;
+    return ret;
+}
+
+/*
 Return the sensor reading for channel pos of type meas
-bits[25:24] are gain
+bits[23:22] are gain
 bits[18:16] are integration time
 bits[15:0] are the data
 */
@@ -115,12 +175,12 @@ uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board){
 
     disable_all_mux_channels(mux);      
     set_led(pos, board, LED_OFF);
-
-    // TODO: do something smarter
-    ret = opt_sensors[pos].last_ch0_reading | ((uint32_t)(opt_sensors[pos].time) << 16) | ((uint32_t)(opt_sensors[pos].gain) << 24);
+    ret = opt_sensors[pos].last_ch0_reading | ((uint32_t)(opt_sensors[pos].time) << 16) | ((uint32_t)(opt_sensors[pos].gain) << 22);
 
     return ret;
 }
+
+
 
 /*
 Take readings from the optical sensor and calibrate gain and integration time
