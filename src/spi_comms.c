@@ -1,8 +1,8 @@
 #include "spi_comms.h"
 
 volatile uint8_t spi_spdr_tx_buffer = 0;
-volatile uint8_t spi_current_spdr_byte = 0;
-volatile uint8_t spi_frame_number = 0;
+volatile uint8_t spi_current_spdr_byte = 0; // current data byte being sent
+volatile uint8_t spi_frame_number = 0;      // byte number of data trasmission
 volatile cmd_t* current_cmd = &nop_cmd;
 volatile uint8_t cmd_finished = 0;
 volatile uint8_t spi_status_byte = 0;
@@ -58,21 +58,32 @@ cmd_t* cmd_opcode_to_cmd(uint8_t opcode){
     }
 }
 
+// interrupt service routine runs when interrupt condition is tripped
 ISR(SPI_STC_vect){
     // Evaluate the opcode
     spi_current_spdr_byte = SPDR;
     current_cmd = cmd_opcode_to_cmd(spi_current_spdr_byte);
 
+    // *(current_cmd).fcn = current_cmd->fn = get function associated with command
     (current_cmd->fn)();
     SPDR = spi_status_byte;
 
+    // while slave select is low
     while (!(SS_PIN & _BV(SS))){
+
+        // while transmission has not ended
+        // SPIF is asserted when 1 byte is shifted
         while (!(SPSR & _BV(SPIF)));
         spi_frame_number++;
         spi_current_spdr_byte = SPDR;
-        (current_cmd->fn)();
+        (current_cmd->fn)();            // perform requested function
+
+        // ATmega 328's SPI is double buffered in transmit direction
+        // so while current data byte is being sent, start loading up 
+        // the next byte to be sent using this buffer
         SPDR = spi_spdr_tx_buffer;
     }
+    // reset control variables at end of ISR
     current_cmd = &nop_cmd;
     spi_frame_number = 0;
     spi_spdr_tx_buffer = 0;
@@ -83,11 +94,15 @@ ISR(SPI_STC_vect){
 void nop_fn(void){
     // do nothing
 }
+
+
 void update_all_readings_fn(void){
     if (spi_frame_number == 1){
         
     }
 }
+
+// calibrate and take well readings
 void update_reading_fn(void){
     if (spi_frame_number == 1){
         // update the well reading
@@ -95,6 +110,8 @@ void update_reading_fn(void){
     }
 }
 
+
+// load well readings (which are already in data registers) for SPI transmission
 void get_reading_fn(void){
     static uint32_t reading = 0;
     static pay_board_t board = 0;
@@ -103,15 +120,21 @@ void get_reading_fn(void){
         board = spi_current_spdr_byte >> 7;
         if (board == PAY_OPTICAL){
             reading = (wells + (spi_current_spdr_byte && 0x1F))->last_opt_reading;
-        } else {
+        } 
+        else {
             reading = (wells + (spi_current_spdr_byte && 0x1F))->last_led_reading;
         }
+
+        // load the next byte of data, ready for SPI transmission out
         spi_spdr_tx_buffer = (uint8_t)(reading >> 16);
-    } else if (spi_frame_number == 2){
+    } 
+    else if (spi_frame_number == 2){
         spi_spdr_tx_buffer = (uint8_t)(reading >> 8);
-    } else if (spi_frame_number == 3){
+    } 
+    else if (spi_frame_number == 3){
         spi_spdr_tx_buffer = (uint8_t)(reading);
-    } else {
+    } 
+    else {
         spi_spdr_tx_buffer = 0;
     }
 }

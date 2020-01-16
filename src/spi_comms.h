@@ -22,8 +22,10 @@
 /* EXTERNALLY AVAILABLE VARIABLES */
 extern well_t* wells;
 
+/* function just moves data registers around, so no input or output */
 typedef void(*cmd_fn_t)(void);
 
+/* associate desired function with opcode */
 typedef struct {
     cmd_fn_t fn;
     uint8_t opcode;
