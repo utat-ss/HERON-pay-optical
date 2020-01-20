@@ -64,6 +64,13 @@ void init_spi(void) {
     SPCR |= _BV(SPE) | _BV(SPIE);
     // enable all interrupts
     sei();
+
+    // enable interrupt source as well
+    // might need something like:
+    //     SPSR |= (1 << SPIF); // also enable SPI interrupts
+    //     MCUCR |= (1 << SPIPS); // use alternate SPI lines
+
+
 }
 
 /*

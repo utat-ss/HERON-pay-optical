@@ -19,7 +19,7 @@ void get_voltage_fn(void);
 void get_power_fn(void);
 
 /*
-Initialize SPI comms
+Initialize SPI comms as SPI slave, with interrupts enabled
 */
 void init_spi_comms(void){
     // initialize SPI

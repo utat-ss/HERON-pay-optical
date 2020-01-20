@@ -28,8 +28,6 @@
 #define OPT_SENS_LOW_THRES           0.1
 #define OPT_SENS_HIGH_THRES          0.9
 
-/* EXTERNALLY AVAILABLE VARIABLES */
-extern well_t* wells;
 
 /* QUALITY OF LIFE DEFINES */
 typedef enum {
@@ -59,6 +57,9 @@ typedef struct {
     // sensor struct
     light_sensor_t* sensor;
 } well_t;
+
+/* EXTERNALLY AVAILABLE VARIABLES */
+extern well_t wells[];
 
 /* To be implemented:
 

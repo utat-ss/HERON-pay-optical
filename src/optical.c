@@ -124,7 +124,7 @@ void read_opt_sensor_test(uint8_t pos){
 Update the global array of wells with a new reading
 */
 void update_well_reading(uint8_t pos, pay_board_t board){
-    if (board = PAY_OPTICAL) {
+    if (board == PAY_OPTICAL) {
         write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->opt_calib);
         (wells + pos)->last_opt_reading = get_opt_sensor_reading(pos, board);
         (wells + pos)->opt_calib = read_opt_sensor_calibration(opt_sensors + pos);
@@ -140,8 +140,12 @@ Update the optical sensor with the given calibration
 */
 void write_opt_sensor_calibration(light_sensor_t* light_sens, light_sensor_setting_t setting){
     sleep_light_sensor(light_sens);
-    set_light_sensor_again(setting.gain);
-    set_light_sensor_atime(setting.time);
+
+    set_light_sensor_again(light_sens);
+    set_light_sensor_atime(light_sens);
+
+    // set_light_sensor_again(setting.gain);
+    // set_light_sensor_atime(setting.time);
     wake_light_sensor(light_sens);
 }
 
