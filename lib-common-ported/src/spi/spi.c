@@ -69,8 +69,6 @@ void init_spi(void) {
     // might need something like:
     //     SPSR |= (1 << SPIF); // also enable SPI interrupts
     //     MCUCR |= (1 << SPIPS); // use alternate SPI lines
-
-
 }
 
 /*

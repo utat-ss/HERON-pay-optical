@@ -128,7 +128,7 @@ void update_well_reading(uint8_t pos, pay_board_t board){
         write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->opt_calib);
         (wells + pos)->last_opt_reading = get_opt_sensor_reading(pos, board);
         (wells + pos)->opt_calib = read_opt_sensor_calibration(opt_sensors + pos);
-    } else {
+    } else {    // PAY_LED
         write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->led_calib);
         (wells + pos)->last_led_reading = get_opt_sensor_reading(pos, board);
         (wells + pos)->led_calib = read_opt_sensor_calibration(opt_sensors + pos);

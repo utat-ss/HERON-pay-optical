@@ -12,15 +12,23 @@
 #include "optical.h"
 #include "power.h"
 
+// slave select pin
 #define SS              PB2
 #define SS_PORT         PORTB
 #define SS_DDR          DDRB
 #define SS_PIN          PINB
 
+// output DATA_RDYn pin (active low)
+#define DATA_RDYn       PD7
+#define DATA_RDYn_PORT  PORTD
+#define DATA_RDYn_DDR   DDRD
+#define DATA_RDYn_PIN   PIND
+
+
 #define MAX_COMMAND_QUEUE_LENGTH
 
 /* EXTERNALLY AVAILABLE VARIABLES */
-extern well_t* wells;
+// extern well_t* wells;        already declared extern in optical.h
 
 /* function just moves data registers around, so no input or output */
 typedef void(*cmd_fn_t)(void);
@@ -45,9 +53,9 @@ cmd_t get_voltage_cmd;
 cmd_t get_power_cmd;
 
 /* SPI OPCODES */
-#define CMD_UPDATE_ALL_READINGS     0x01
-#define CMD_UPDATE_READING          0x02
-#define CMD_GET_READING             0x03
+#define CMD_GET_READING             0x01    // 1 cmd byte, followed by 1 byte of well_data
+
+
 #define CMD_SET_LED_BANK            0x04
 #define CMD_GET_LED_BANK            0x05
 #define CMD_ENTER_SLEEP_MODE        0x06
@@ -61,6 +69,14 @@ cmd_t get_power_cmd;
 #define SPI_ERROR_BIT               6
 #define SPI_INVALID_COMMAND_BIT     5           
 
+void init_spi_comms(void);
+uint8_t opt_check_ss_pin(void);
+void opt_set_data_rdy_low();
+void opt_set_data_rdy_high();
+void opt_loop(void);
+void manage_cmd(uint8_t cmd_code);
+void opt_update_reading(uint8_t well_data);
+void opt_transfer_reading();
 
 
 #endif // SPI_COMMS_H
