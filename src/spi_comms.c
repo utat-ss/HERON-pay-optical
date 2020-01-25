@@ -1,13 +1,13 @@
 #include "spi_comms.h"
 
 // SPI data from PAY-SSM
-volatile uint8_t spi_first_byte = 0;
-volatile uint8_t spi_second_byte = 0;
+uint8_t spi_first_byte = 0;
+uint8_t spi_second_byte = 0;
 
-volatile uint8_t spi_spdr_tx_buffer = 0;    // holds data to be shifted into SPDR, for SPI transfer
-volatile uint8_t spi_frame_number = 0;      // byte number of data trasmission
+uint8_t spi_spdr_tx_buffer = 0;    // holds data to be shifted into SPDR, for SPI transfer
+uint8_t spi_frame_number = 0;      // byte number of data trasmission
 
-volatile uint8_t spi_status_byte = 0;
+uint8_t spi_status_byte = 0;
 
 
 // Initialize SPI comms as SPI slave, with interrupts enabled
@@ -22,8 +22,9 @@ void init_spi_comms(void){
 
 
 // return status of SS pin
+// ------- might not need, since OPTICAL just checks SPIF flag
 uint8_t opt_check_ss_pin(void){
-    return SS_PIN & _BV(SS); 
+    return SS_PIN >> SS; 
 }
 
 
@@ -47,7 +48,10 @@ void opt_loop(void){
 
         // wait until another SPI transfer is completed
         // --> aka wait until SPIF is no longer high 
-        while (!(SPSR & _BV(SPIF)));
+        uint16_t timeout = UINT16_MAX;
+        while (!(SPSR & _BV(SPIF)) && timeout>0){
+            timeout--;
+        }
 
         opt_set_data_rdy_high();        // clear DATA_RDYn, so PAY doesn't freak out
         spi_second_byte = SPDR;
@@ -79,15 +83,14 @@ void manage_cmd (uint8_t cmd_code){
         while (!(SPSR & _BV(SPIF)));
         opt_set_data_rdy_high();
     }
-
 }
 
 
 // calibrate and take well readings
 // well_data[7] - optical density = 0, fluorescent LED = 1
-// well_data[5:0] - well number (0-31)
+// well_data[4:0] - well number (0-31)
 void opt_update_reading(uint8_t well_data){
-    update_well_reading((well_data && 0x1F), well_data >> 7);
+    update_well_reading((well_data & 0x1F), well_data >> 7);
 }
 
 
@@ -99,13 +102,17 @@ void opt_transfer_reading(){
         reading = (wells + (spi_second_byte && 0x1F))->last_led_reading;
 
     uint8_t shift = 16;
-    while (shift >= 0){
+    uint16_t timeout = UINT16_MAX;
+    while (shift != 0){
         // load the next byte of data, ready for SPI transmission out
         spi_spdr_tx_buffer = (uint8_t)(reading >> shift);
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
-        while (!(SPSR & _BV(SPIF)));
+        while (!(SPSR & _BV(SPIF)) && timeout > 0){
+            timeout--;
+        }
+
         opt_set_data_rdy_high();
 
         shift = shift - 8;
