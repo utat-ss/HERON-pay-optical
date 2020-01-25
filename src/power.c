@@ -29,6 +29,9 @@ void init_board(){
     print("-- SPI Initialized\n");
     init_board_sensors();
     print("-- Board initialized\n");
+
+    init_spi_comms();
+    print("-- SPI Comms initialized\n");
 }
 
 /*
