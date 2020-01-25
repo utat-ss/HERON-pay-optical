@@ -1,9 +1,9 @@
+/*
+    PROTOCOL: to be written
+    (see pay > src > optica.c for details)
+*/
+
 #include "spi_comms.h"
-
-
-
-uint8_t spi_status_byte = 0;
-
 
 // Initialize SPI comms as SPI slave, with interrupts enabled
 void init_spi_comms(void){
@@ -74,6 +74,8 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
 
     // invalid command
     else{ 
+        uint8_t spi_status_byte = 0;
+
         spi_status_byte |= _BV(SPI_ERROR_BIT) | _BV(SPI_INVALID_COMMAND_BIT);
         SPDR = spi_status_byte;
 
