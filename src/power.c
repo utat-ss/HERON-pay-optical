@@ -1,4 +1,5 @@
 #include "power.h"
+#include "spi_comms.h"
 
 pin_info_t load_switch_en = {
     .port = &LOAD_SWITCH_PORT,
