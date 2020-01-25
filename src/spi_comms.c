@@ -1,11 +1,6 @@
 #include "spi_comms.h"
 
-// SPI data from PAY-SSM
-uint8_t spi_first_byte = 0;
-uint8_t spi_second_byte = 0;
 
-uint8_t spi_spdr_tx_buffer = 0;    // holds data to be shifted into SPDR, for SPI transfer
-uint8_t spi_frame_number = 0;      // byte number of data trasmission
 
 uint8_t spi_status_byte = 0;
 
@@ -43,6 +38,10 @@ void opt_set_data_rdy_high(){
 void opt_loop(void){
     // if SPI transfer if completed
     if (SPSR & _BV(SPIF)){
+        // SPI data from PAY-SSM
+        uint8_t spi_first_byte = 0;
+        uint8_t spi_second_byte = 0;
+
         spi_first_byte = SPDR;
         opt_set_data_rdy_low();         // set DATA_RDYn low to signal to PAY that it's ready for the second byte
 
@@ -58,29 +57,38 @@ void opt_loop(void){
 
         // now, got both bytes
         // perform the requested command and send back data if necessary
-        manage_cmd(spi_first_byte);
+        manage_cmd(spi_first_byte, spi_second_byte);
     }
     opt_set_data_rdy_high();
 }
 
 
 // depending on cmd_code, does appropriate requested function + return data (if needed)
-void manage_cmd (uint8_t cmd_code){
-    // if first byte is get_reading, then 2nd byte is well data
-    if (cmd_code == CMD_GET_READING){
-        // spi_second_byte contains well_data
+void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
+    // if first byte is get_reading, then 2nd byte is well info
+    if (spi_first_byte == CMD_GET_READING){
+        // spi_second_byte contains well_info
         opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
-        opt_transfer_reading();       // shifts reading data into SPDR over 3 SPI transmissions
+        opt_transfer_reading(spi_second_byte);       // shifts reading data into SPDR over 3 SPI transmissions
     }
 
     // invalid command
     else{ 
         spi_status_byte |= _BV(SPI_ERROR_BIT) | _BV(SPI_INVALID_COMMAND_BIT);
         SPDR = spi_status_byte;
+
+        // start tranmsiission
         opt_set_data_rdy_low();
 
         // wait until SPI transfer is complete
-        while (!(SPSR & _BV(SPIF)));
+        uint16_t timeout = UINT16_MAX;
+        while (!(SPSR & _BV(SPIF)) && timeout>0){
+            timeout--;
+        }
+        // read the SPDR to clear SPIF flag
+        uint8_t dummy = SPDR;
+
+        // done transmission
         opt_set_data_rdy_high();
     }
 }
@@ -89,23 +97,24 @@ void manage_cmd (uint8_t cmd_code){
 // calibrate and take well readings
 // well_data[7] - optical density = 0, fluorescent LED = 1
 // well_data[4:0] - well number (0-31)
-void opt_update_reading(uint8_t well_data){
-    update_well_reading((well_data & 0x1F), well_data >> 7);
+void opt_update_reading(uint8_t well_info){
+    update_well_reading((well_info & 0x1F), well_info >> 7);
 }
 
 
-void opt_transfer_reading(){
+void opt_transfer_reading(uint8_t well_info){
     uint32_t reading = 0;
-    if (spi_second_byte >> 7 == PAY_OPTICAL)    // bit 7 = 0
-        reading = (wells + (spi_second_byte && 0x1F))->last_opt_reading;
+
+    if (well_info >> 7 == PAY_OPTICAL)    // bit 7 = 0
+        reading = (wells + (well_info & 0x1F))->last_opt_reading;
     else // PAY_LED, bit 7 = 1
-        reading = (wells + (spi_second_byte && 0x1F))->last_led_reading;
+        reading = (wells + (well_info & 0x1F))->last_led_reading;
 
     uint8_t shift = 16;
     uint16_t timeout = UINT16_MAX;
     while (shift != 0){
         // load the next byte of data, ready for SPI transmission out
-        spi_spdr_tx_buffer = (uint8_t)(reading >> shift);
+        SPDR = (uint8_t)(reading >> shift);
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete

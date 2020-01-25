@@ -55,7 +55,6 @@ cmd_t get_power_cmd;
 /* SPI OPCODES */
 #define CMD_GET_READING             0x01    // 1 cmd byte, followed by 1 byte of well_data
 
-
 #define CMD_SET_LED_BANK            0x04
 #define CMD_GET_LED_BANK            0x05
 #define CMD_ENTER_SLEEP_MODE        0x06
@@ -65,7 +64,6 @@ cmd_t get_power_cmd;
 #define CMD_GET_POWER               0x0A
 
 /* SPI STATUS BITS */
-#define SPI_DATA_RDY_BIT            7
 #define SPI_ERROR_BIT               6
 #define SPI_INVALID_COMMAND_BIT     5           
 
@@ -74,9 +72,9 @@ uint8_t opt_check_ss_pin(void);
 void opt_set_data_rdy_low();
 void opt_set_data_rdy_high();
 void opt_loop(void);
-void manage_cmd(uint8_t cmd_code);
-void opt_update_reading(uint8_t well_data);
-void opt_transfer_reading();
+void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte);
+void opt_update_reading(uint8_t well_info);
+void opt_transfer_reading(uint8_t well_info);
 
 
 #endif // SPI_COMMS_H
