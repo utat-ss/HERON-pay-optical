@@ -67,6 +67,10 @@ cmd_t get_power_cmd;
 #define SPI_ERROR_BIT               6
 #define SPI_INVALID_COMMAND_BIT     5           
 
+// test type and field (well) number bits
+#define TEST_TYPE_BIT        5
+#define FIELD_NUMBER_BIT       4
+
 void init_spi_comms(void);
 uint8_t opt_check_ss_pin(void);
 void opt_set_data_rdy_low();

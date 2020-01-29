@@ -1,6 +1,6 @@
 /*
     PROTOCOL: to be written
-    (see pay > src > optica.c for details)
+    (see pay > src > optical.c for details)
 */
 
 #include "spi_comms.h"
@@ -88,7 +88,7 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
             timeout--;
         }
         // read the SPDR to clear SPIF flag
-        uint8_t dummy = SPDR;
+        SPDR = SPDR & 0xFF;
 
         // done transmission
         opt_set_data_rdy_high();
@@ -97,7 +97,7 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
 
 
 // calibrate and take well readings
-// well_data[7] - optical density = 0, fluorescent LED = 1
+// well_data[5] - optical density = 0, fluorescent LED = 1
 // well_data[4:0] - well number (0-31)
 void opt_update_reading(uint8_t well_info){
     update_well_reading((well_info & 0x1F), well_info >> 7);
@@ -107,9 +107,9 @@ void opt_update_reading(uint8_t well_info){
 void opt_transfer_reading(uint8_t well_info){
     uint32_t reading = 0;
 
-    if (well_info >> 7 == PAY_OPTICAL)    // bit 7 = 0
+    if (well_info >> TEST_TYPE_BIT == PAY_OPTICAL)    // bit 5 = 0
         reading = (wells + (well_info & 0x1F))->last_opt_reading;
-    else // PAY_LED, bit 7 = 1
+    else // PAY_LED, bit 5 = 1
         reading = (wells + (well_info & 0x1F))->last_led_reading;
 
     uint8_t shift = 16;
@@ -128,7 +128,8 @@ void opt_transfer_reading(uint8_t well_info){
 
         shift = shift - 8;
 
-        // might need small delay here, will test
+        // small delay to give time for DATA_RDYn to go high
+        _delay_us(10);
     }
 }
 
