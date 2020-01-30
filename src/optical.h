@@ -29,21 +29,16 @@
 #define OPT_SENS_HIGH_THRES          0.9
 
 
-/* QUALITY OF LIFE DEFINES */
+/* QUALITY OF LIFE DEFINES , -nani?? */
 typedef enum {
-    PAY_OPTICAL = 0,
-    PAY_LED = 1
+    PAY_LED = 0,         // optical density
+    PAY_OPTICAL = 1      // fluorescence
 } pay_board_t;
 
 typedef enum {
     LED_ON  = 1,
     LED_OFF = 0
 } led_state_t;
-
-typedef enum {
-    FLUOR_MEAS = 0,
-    OD_MEAS = 1
-} meas_type_t;
 
 typedef struct {
     // calibration settings

@@ -127,9 +127,6 @@ void opt_transfer_reading(uint8_t well_info){
         opt_set_data_rdy_high();
 
         shift = shift - 8;
-
-        // small delay to give time for DATA_RDYn to go high
-        _delay_us(10);
     }
 }
 
