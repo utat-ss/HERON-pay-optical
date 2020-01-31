@@ -201,7 +201,10 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         calibrated = 1;
     }
 
-    while (!calibrated){
+    uint16_t timeout = UINT16_MAX;
+    while (!calibrated && timeout>0){
+        timeout--;
+
         // put the device to sleep
         sleep_light_sensor(light_sens);
 
