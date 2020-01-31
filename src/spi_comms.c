@@ -72,6 +72,12 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
         opt_transfer_reading(spi_second_byte);       // shifts reading data into SPDR over 3 SPI transmissions
     }
 
+    // get power
+    else if (spi_first_byte == CMD_GET_POWER){
+        uint32_t data = read_raw_power();
+        opt_transfer_bytes(data, 4);
+    }
+
     // invalid command
     else{ 
         uint8_t spi_status_byte = 0;
@@ -107,16 +113,26 @@ void opt_update_reading(uint8_t well_info){
 void opt_transfer_reading(uint8_t well_info){
     uint32_t reading = 0;
 
-    if (well_info >> TEST_TYPE_BIT == PAY_OPTICAL)    // bit 5 = 0
+    if ( ((well_info >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
         reading = (wells + (well_info & 0x1F))->last_opt_reading;
     else // PAY_LED, bit 5 = 1
         reading = (wells + (well_info & 0x1F))->last_led_reading;
 
-    uint8_t shift = 16;
+    // 3 bytes to transfer
+    opt_transfer_bytes(reading, 3);
+}
+
+
+void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
+    // ex. 1 byte to transfer, shift = 0
+    // ex. 4 bytes to transfer, shift = 24 -> 16 -> 8 -> 0
+    uint8_t shift = (num_bytes-1)*8;
     uint16_t timeout = UINT16_MAX;
-    while (shift != 0){
+    while (shift != 0 && timeout>0){
+        timeout--;
+
         // load the next byte of data, ready for SPI transmission out
-        SPDR = (uint8_t)(reading >> shift);
+        SPDR = (uint8_t)(data >> shift);
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
@@ -281,6 +297,8 @@ void get_voltage_fn(void) {
     }
 }
 
+
+// very clever Vogel, abusing the union data structure
 void get_power_fn(void) {
     static union {
         float val;
@@ -296,78 +314,5 @@ void get_power_fn(void) {
         spi_spdr_tx_buffer = power.bytes[4 - spi_frame_number];
     }
 }
-
-cmd_t nop_cmd = {
-    .fn = nop_fn,
-    .opcode = 0xFF
-};
-
-cmd_t update_all_readings_cmd = {
-    .fn = update_all_readings_fn,
-    .opcode = CMD_UPDATE_ALL_READINGS
-};
-
-cmd_t update_reading_cmd = {
-    .fn = update_reading_fn,
-    .opcode = CMD_UPDATE_READING
-};
-
-cmd_t get_reading_cmd = {
-    .fn = get_reading_fn,
-    .opcode = CMD_GET_READING
-};
-
-cmd_t set_led_bank_cmd = {
-    .fn = set_led_bank_fn,
-    .opcode = CMD_SET_LED_BANK
-};
-
-cmd_t get_led_bank_cmd = {
-    .fn = get_led_bank_fn,
-    .opcode = CMD_GET_LED_BANK
-};
-
-cmd_t enter_sleep_mode_cmd = {
-    .fn = enter_sleep_mode_fn,
-    .opcode = CMD_ENTER_SLEEP_MODE
-};
-
-cmd_t enter_normal_mode_cmd = {
-    .fn = enter_normal_mode_fn,
-    .opcode = CMD_ENTER_NORMAL_MODE
-};
-
-cmd_t get_current_cmd = {
-    .fn = get_current_fn,
-    .opcode = CMD_GET_CURRENT
-};
-
-cmd_t get_voltage_cmd = {
-    .fn = get_voltage_fn,
-    .opcode = CMD_GET_VOLTAGE
-};
-
-cmd_t get_power_cmd = {
-    .fn = get_power_fn,
-    .opcode = CMD_GET_POWER
-};
-
-
-
-// LIST OF COMMANDS
-cmd_t* all_cmds_list[] = {
-    &update_all_readings_cmd,
-    &update_reading_cmd,
-    &get_reading_cmd,
-    &set_led_bank_cmd,
-    &get_led_bank_cmd,
-    &enter_sleep_mode_cmd,
-    &enter_normal_mode_cmd,
-    &get_current_cmd,
-    &get_voltage_cmd,
-    &get_power_cmd
-};
-
-const uint8_t len_all_cmds = sizeof(all_cmds_list) / sizeof(all_cmds_list[0]);
 
 */

@@ -44,6 +44,8 @@ void enter_normal_mode();
 float power_read_current();
 float power_read_voltage();
 float power_read_power();
+uint32_t read_raw_power();
+
 float convert_adc_data_to_voltage(uint16_t data, float vref);
 void init_adc();
 uint16_t read_adc_channel(uint8_t channel);

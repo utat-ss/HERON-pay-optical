@@ -1,7 +1,6 @@
-#include "../../src/optical_spi.h"
-#include "../../src/power.h"
-#include "../../src/optical.h"
 #include "../../src/spi_comms.h"
+#include "../../src/optical.h"
+#include "../../src/power.h"
 #include <util/delay.h>
 #include <spi/spi.h>
 
@@ -9,11 +8,7 @@
 // bool spi_in_progress = 0;
 
 int main(void) {
-	// DO NOT INITIALIZE UART - it interferes with the SPI slave functionality
-
-	// Use dummy data instead of actual ADC data for testing
-	// opt_spi_use_dummy_data = false;
-
+	// handles everything
 	init_board();
 
 	while (1) {
@@ -23,4 +18,6 @@ int main(void) {
 
        opt_loop();
 	}
+
+	return 0;
 }

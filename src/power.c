@@ -88,6 +88,22 @@ void enter_normal_mode(){
     // do something with the micro
 }
 
+
+// returns raw current and voltage data from ADC, concated in 32 bits
+uint32_t read_raw_power(){ // nice name :^)
+    // 10 bits of data
+    uint16_t raw_current = read_adc_channel(POWER_CURR_CHANNEL);
+    uint16_t raw_voltage = read_adc_channel(POWER_VOLT_CHANNEL);
+
+    // voltage on left, current on right
+    uint32_t raw_power = raw_voltage;
+    raw_power = raw_power << 16;
+    raw_power = raw_power | raw_current;
+
+    return raw_power;
+}
+
+
 /*
 Return the current consumption of the board in mA
 Returns total current going into the board from the SSM header
@@ -157,7 +173,12 @@ uint16_t read_adc_channel(uint8_t channel){
     set_adc_channel(channel);
     // enable ADC, single conversion, clear any ADIF flag, keep prescaler bits
     ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADIF) | (ADCSRA & ~ADC_PRESCALER_MASK);
-    while(!(ADCSRA & _BV(ADIF)));
+
+    uint16_t timeout = UINT16_MAX;
+    while(!(ADCSRA & _BV(ADIF)) && timeout > 0){
+        timeout--;
+    }
+
     adc_read |= (uint16_t)(ADCL & 0x00FF);
     adc_read |= (uint16_t)((ADCH << 8) & 0x0300);
     // disable ADC, clear ADIF flag, keep prescaler bits

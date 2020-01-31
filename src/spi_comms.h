@@ -30,38 +30,15 @@
 /* EXTERNALLY AVAILABLE VARIABLES */
 // extern well_t* wells;        already declared extern in optical.h
 
-/* function just moves data registers around, so no input or output */
-typedef void(*cmd_fn_t)(void);
-
-/* associate desired function with opcode */
-typedef struct {
-    cmd_fn_t fn;
-    uint8_t opcode;
-}cmd_t;
-
-
-/* SPI COMMANDS */
-cmd_t update_all_readings_cmd;
-cmd_t update_reading_cmd;
-cmd_t get_reading_cmd;
-cmd_t set_led_bank_cmd;
-cmd_t get_led_bank_cmd;
-cmd_t enter_sleep_mode_cmd;
-cmd_t enter_normal_mode_cmd;
-cmd_t get_current_cmd;
-cmd_t get_voltage_cmd;
-cmd_t get_power_cmd;
-
 /* SPI OPCODES */
 #define CMD_GET_READING             0x01    // 1 cmd byte, followed by 1 byte of well_data
+#define CMD_GET_POWER               0x0A
 
+// unimplemented
 #define CMD_SET_LED_BANK            0x04
 #define CMD_GET_LED_BANK            0x05
 #define CMD_ENTER_SLEEP_MODE        0x06
 #define CMD_ENTER_NORMAL_MODE       0x07
-#define CMD_GET_CURRENT             0x08
-#define CMD_GET_VOLTAGE             0x09
-#define CMD_GET_POWER               0x0A
 
 /* SPI STATUS BITS */
 #define SPI_ERROR_BIT               6
@@ -76,9 +53,10 @@ uint8_t opt_check_ss_pin(void);
 void opt_set_data_rdy_low();
 void opt_set_data_rdy_high();
 void opt_loop(void);
+
 void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte);
 void opt_update_reading(uint8_t well_info);
 void opt_transfer_reading(uint8_t well_info);
-
+void opt_transfer_bytes (uint32_t data, uint8_t num_bytes);
 
 #endif // SPI_COMMS_H
