@@ -142,7 +142,7 @@ void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
     for (int8_t i = num_bytes - 1; i >= 0; i--) {
         uint8_t shift = i * 8;
 
-        uint8_t byte = data >> shift;
+        uint8_t byte = (data >> shift) & 0xFF;
 
         // load the next byte of data, ready for SPI transmission out
         SPDR = byte;
@@ -157,6 +157,10 @@ void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
         if (timeout == 0) {
             print("TIMEOUT in opt_transfer_bytes\n");
         }
+        // Read SPDR to clear SPIF bit or else optical will think it has
+        // received another SPI transfer
+        uint8_t dummy_byte = SPDR;
+
         print("%.2x", byte);
 
         opt_set_data_rdy_high();
