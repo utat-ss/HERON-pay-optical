@@ -58,10 +58,13 @@ void set_cs_high(uint8_t pin, port_t port) {
 void init_spi(void) {
     // disable all interrupts
     cli();
+
     // make MISO pin output
     DDRB |= _BV(MISO);
     // enable SPI as slave
-    SPCR |= _BV(SPE) | _BV(SPIE);
+    // Do not set SPIE because we don't want to enable interrupts
+    SPCR |= _BV(SPE);
+
     // enable all interrupts
     sei();
 

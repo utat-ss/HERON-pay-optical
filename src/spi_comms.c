@@ -38,6 +38,8 @@ void opt_set_data_rdy_high(){
 void opt_loop(void){
     // if SPI transfer if completed
     if (SPSR & _BV(SPIF)){
+        print("1\n");
+        
         // SPI data from PAY-SSM
         uint8_t spi_first_byte = 0;
         uint8_t spi_second_byte = 0;

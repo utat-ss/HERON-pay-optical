@@ -1,21 +1,28 @@
-#include "main.h"
+/*
+NOTE: When uploading a program to PAY-Optical, you might need to hold down the
+RST button on PAY-SSM. The PAY-SSM switch must be in RUN mode for the reset
+button to work.
+*/
 
-volatile uint8_t spi_count = 0;
-volatile uint8_t pin_state = 0;
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
+#endif 
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdint.h>
+
+#include <uart/uart.h>
+#include <spi/spi.h>
+#include <utilities/utilities.h>
+
+#include "power.h"
+#include "spi_comms.h"
 
 int main(void) {
     init_board();
 
-    print("Waiting for SPI\n");
-
     while(1){
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-            if (spi_count != 0){
-                print("SPI frames: %d Pin state %d\n", spi_count, pin_state);
-                spi_count = 0;
-            }
-        }
+        opt_loop();
     }
 }
-
-
