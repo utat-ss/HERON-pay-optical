@@ -40,26 +40,28 @@ void opt_loop(void){
     if (SPSR & _BV(SPIF)){
         // print("1\n");
         // SPI data from PAY-SSM
-        uint8_t spi_first_byte = SPDR;
+        uint8_t rx_bytes[2] = {0x00};
+        rx_bytes[0] = SPDR;
 
         // wait until another SPI transfer is completed
         // --> aka wait until SPIF is no longer high 
-        uint32_t timeout = 1000000;
+        uint32_t timeout = 100;
         while (!(SPSR & _BV(SPIF)) && timeout>0){
             timeout--;
-            _delay_us(1);
+            _delay_ms(1);
         }
         if (timeout == 0) {
             print("TIMEOUT RX second byte\n");
         }
         // print("2\n");
-        uint8_t spi_second_byte = SPDR;
+        rx_bytes[1] = SPDR;
 
-        print("SPI RX: %.2x:%.2x\n", spi_first_byte, spi_second_byte);
+        print("SPI RX: ");
+        print_bytes(rx_bytes, 2);
 
         // now, got both bytes
         // perform the requested command and send back data if necessary
-        manage_cmd(spi_first_byte, spi_second_byte);
+        manage_cmd(rx_bytes[0], rx_bytes[1]);
     }
     opt_set_data_rdy_high();
 }
@@ -127,27 +129,30 @@ void opt_update_reading(uint8_t well_info){
 
 // sends multiple bytes via SPI, by sequentially shifting
 // MSB sent first
-void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
+void opt_transfer_bytes(uint32_t data, uint8_t num_bytes){
+    // TODO - size?
+    uint8_t tx_bytes[3] = {0x00};
+    for (uint8_t i = 0; i < 3; i++) {
+        uint8_t shift = (3 - 1 - i) * 8;
+        tx_bytes[i] = (data >> shift) & 0xFF;
+    }
+
     print("SPI TX: ");
+    print_bytes(tx_bytes, 3);
 
     // ex. 1 byte to transfer, shift = 0
     // ex. 4 bytes to transfer, shift = 24 -> 16 -> 8 -> 0    
 
-    for (int8_t i = num_bytes - 1; i >= 0; i--) {
-        uint8_t shift = i * 8;
-
-        uint8_t byte = (data >> shift) & 0xFF;
-        print("%.2x:", byte);
-
+    for (uint8_t i = 0; i < num_bytes; i++) {
         // load the next byte of data, ready for SPI transmission out
-        SPDR = byte;
+        SPDR = tx_bytes[i];
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
-        uint32_t timeout = 1000000;
+        uint32_t timeout = 100;
         while (!(SPSR & _BV(SPIF)) && timeout > 0){
             timeout--;
-            _delay_us(1);
+            _delay_ms(1);
         }
         if (timeout == 0) {
             print("TIMEOUT in opt_transfer_bytes\n");
@@ -158,8 +163,6 @@ void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
     }
 
     opt_set_data_rdy_high();
-
-    print("\n");
 }
 
 
