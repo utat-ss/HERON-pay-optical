@@ -39,7 +39,7 @@ void opt_loop(void){
     // if SPI transfer if completed
     if (SPSR & _BV(SPIF)){
         print("1\n");
-        
+
         // SPI data from PAY-SSM
         uint8_t spi_first_byte = 0;
         uint8_t spi_second_byte = 0;
@@ -53,9 +53,15 @@ void opt_loop(void){
         while (!(SPSR & _BV(SPIF)) && timeout>0){
             timeout--;
         }
+        if (timeout == 0) {
+            print("TIMEOUT in opt_loop\n");
+        }
+        print("2\n");
 
         opt_set_data_rdy_high();        // clear DATA_RDYn, so PAY doesn't freak out
         spi_second_byte = SPDR;
+
+        print("SPI RX: %.2x:%.2x\n", spi_first_byte, spi_second_byte);
 
         // now, got both bytes
         // perform the requested command and send back data if necessary
@@ -69,15 +75,21 @@ void opt_loop(void){
 void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
     // if first byte is get_reading, then 2nd byte is well info
     if (spi_first_byte == CMD_GET_READING){
-        // spi_second_byte contains well_info
-        opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
+        print("Get reading\n");
+
+        // TODO
+        uint32_t reading = 0x123456;
+
+        // // spi_second_byte contains well_info
+        // opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
         
-        // fetch reading from registers
-        uint32_t reading = 0;  
-        if ( ((spi_second_byte >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
-            reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
-        else // PAY_LED, bit 5 = 1
-            reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
+        // // fetch reading from registers
+
+        // uint32_t reading = 0;  
+        // if ( ((spi_second_byte >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
+        //     reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
+        // else // PAY_LED, bit 5 = 1
+        //     reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
         
         opt_transfer_bytes(reading, NUM_GET_READING);       // shifts reading data into SPDR over 3 SPI transmissions
     }
@@ -122,26 +134,35 @@ void opt_update_reading(uint8_t well_info){
 // sends multiple bytes via SPI, by sequentially shifting
 // MSB sent first
 void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
+    print("SPI TX: ");
+
     // ex. 1 byte to transfer, shift = 0
-    // ex. 4 bytes to transfer, shift = 24 -> 16 -> 8 -> 0
-    uint8_t shift = (num_bytes-1)*8;
-    uint16_t timeout = UINT16_MAX;
-    while (shift != 0 && timeout>0){
-        timeout--;
+    // ex. 4 bytes to transfer, shift = 24 -> 16 -> 8 -> 0    
+
+    for (int8_t i = num_bytes - 1; i >= 0; i--) {
+        uint8_t shift = i * 8;
+
+        uint8_t byte = data >> shift;
 
         // load the next byte of data, ready for SPI transmission out
-        SPDR = (uint8_t)(data >> shift);
+        SPDR = byte;
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
+        uint16_t timeout = 1000;
         while (!(SPSR & _BV(SPIF)) && timeout > 0){
             timeout--;
+            _delay_ms(1);
         }
+        if (timeout == 0) {
+            print("TIMEOUT in opt_transfer_bytes\n");
+        }
+        print("%.2x", byte);
 
         opt_set_data_rdy_high();
-
-        shift = shift - 8;
     }
+
+    print("\n");
 }
 
 

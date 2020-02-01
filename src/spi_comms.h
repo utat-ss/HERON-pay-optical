@@ -32,7 +32,7 @@
 
 /* SPI OPCODES */
 #define CMD_GET_READING             0x01    // 1 cmd byte, followed by 1 byte of well_data
-#define CMD_GET_POWER               0x0A
+#define CMD_GET_POWER               0x02
 
 // unimplemented
 #define CMD_SET_LED_BANK            0x04
