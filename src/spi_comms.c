@@ -38,28 +38,22 @@ void opt_set_data_rdy_high(){
 void opt_loop(void){
     // if SPI transfer if completed
     if (SPSR & _BV(SPIF)){
-        print("1\n");
-
+        // print("1\n");
         // SPI data from PAY-SSM
-        uint8_t spi_first_byte = 0;
-        uint8_t spi_second_byte = 0;
-
-        spi_first_byte = SPDR;
-        opt_set_data_rdy_low();         // set DATA_RDYn low to signal to PAY that it's ready for the second byte
+        uint8_t spi_first_byte = SPDR;
 
         // wait until another SPI transfer is completed
         // --> aka wait until SPIF is no longer high 
-        uint16_t timeout = UINT16_MAX;
+        uint32_t timeout = 1000000;
         while (!(SPSR & _BV(SPIF)) && timeout>0){
             timeout--;
+            _delay_us(1);
         }
         if (timeout == 0) {
-            print("TIMEOUT in opt_loop\n");
+            print("TIMEOUT RX second byte\n");
         }
-        print("2\n");
-
-        opt_set_data_rdy_high();        // clear DATA_RDYn, so PAY doesn't freak out
-        spi_second_byte = SPDR;
+        // print("2\n");
+        uint8_t spi_second_byte = SPDR;
 
         print("SPI RX: %.2x:%.2x\n", spi_first_byte, spi_second_byte);
 
@@ -143,28 +137,27 @@ void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
         uint8_t shift = i * 8;
 
         uint8_t byte = (data >> shift) & 0xFF;
+        print("%.2x:", byte);
 
         // load the next byte of data, ready for SPI transmission out
         SPDR = byte;
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
-        uint16_t timeout = 1000;
+        uint32_t timeout = 1000000;
         while (!(SPSR & _BV(SPIF)) && timeout > 0){
             timeout--;
-            _delay_ms(1);
+            _delay_us(1);
         }
         if (timeout == 0) {
             print("TIMEOUT in opt_transfer_bytes\n");
         }
-        // Read SPDR to clear SPIF bit or else optical will think it has
+        // Must read SPDR to clear SPIF bit or else optical will think it has
         // received another SPI transfer
         uint8_t dummy_byte = SPDR;
-
-        print("%.2x", byte);
-
-        opt_set_data_rdy_high();
     }
+
+    opt_set_data_rdy_high();
 
     print("\n");
 }
