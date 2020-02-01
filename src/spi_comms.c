@@ -45,7 +45,7 @@ void opt_loop(void){
 
         // wait until another SPI transfer is completed
         // --> aka wait until SPIF is no longer high 
-        uint32_t timeout = 100;
+        uint32_t timeout = 1000;
         while (!(SPSR & _BV(SPIF)) && timeout>0){
             timeout--;
             _delay_ms(1);
@@ -149,7 +149,7 @@ void opt_transfer_bytes(uint32_t data, uint8_t num_bytes){
         opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
 
         // wait until SPI transfer is complete
-        uint32_t timeout = 100;
+        uint32_t timeout = 1000;
         while (!(SPSR & _BV(SPIF)) && timeout > 0){
             timeout--;
             _delay_ms(1);
