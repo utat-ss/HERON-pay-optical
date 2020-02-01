@@ -74,18 +74,18 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
         print("Get reading\n");
 
         // TODO
-        uint32_t reading = 0x123456;
+        // uint32_t reading = 0x123456;
 
-        // // spi_second_byte contains well_info
-        // opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
+        // spi_second_byte contains well_info
+        opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
         
-        // // fetch reading from registers
+        // fetch reading from registers
 
-        // uint32_t reading = 0;  
-        // if ( ((spi_second_byte >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
-        //     reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
-        // else // PAY_LED, bit 5 = 1
-        //     reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
+        uint32_t reading = 0;  
+        if ( ((spi_second_byte >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
+            reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
+        else // PAY_LED, bit 5 = 1
+            reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
         
         opt_transfer_bytes(reading, NUM_GET_READING);       // shifts reading data into SPDR over 3 SPI transmissions
     }
@@ -124,7 +124,7 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
 // well_data[5] - optical density = 0, fluorescent LED = 1
 // well_data[4:0] - well number (0-31)
 void opt_update_reading(uint8_t well_info){
-    update_well_reading((well_info & 0x1F), well_info >> 7);
+    update_well_reading((well_info & 0x1F), (well_info >> TEST_TYPE_BIT) & 0x1);
 }
 
 // sends multiple bytes via SPI, by sequentially shifting

@@ -45,8 +45,9 @@
 #define NUM_GET_POWER               3
 
 /* SPI STATUS BITS */
-#define SPI_ERROR_BIT               6
-#define SPI_INVALID_COMMAND_BIT     5           
+#define SPI_ERROR_BIT               7
+#define SPI_INVALID_COMMAND_BIT     6
+
 
 // test type and field (well) number bits
 #define TEST_TYPE_BIT        5
