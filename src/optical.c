@@ -201,6 +201,10 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         calibrated = 1;
     }
 
+    /* 'The timeout needs to be shorter here but I don't know what yet,
+    probably around 5 to 10 because each calibration is hundred of ms'
+    - Bruno
+    */
     uint16_t timeout = UINT16_MAX;
     while (!calibrated && timeout>0){
         timeout--;

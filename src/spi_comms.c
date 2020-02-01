@@ -69,13 +69,21 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
     if (spi_first_byte == CMD_GET_READING){
         // spi_second_byte contains well_info
         opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
-        opt_transfer_reading(spi_second_byte);       // shifts reading data into SPDR over 3 SPI transmissions
+        
+        // fetch reading from registers
+        uint32_t reading = 0;  
+        if ( ((spi_second_byte >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
+            reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
+        else // PAY_LED, bit 5 = 1
+            reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
+        
+        opt_transfer_bytes(reading, NUM_GET_READING);       // shifts reading data into SPDR over 3 SPI transmissions
     }
 
     // get power
     else if (spi_first_byte == CMD_GET_POWER){
         uint32_t data = read_raw_power();
-        opt_transfer_bytes(data, 4);
+        opt_transfer_bytes(data, NUM_GET_POWER);
     }
 
     // invalid command
@@ -109,20 +117,8 @@ void opt_update_reading(uint8_t well_info){
     update_well_reading((well_info & 0x1F), well_info >> 7);
 }
 
-
-void opt_transfer_reading(uint8_t well_info){
-    uint32_t reading = 0;
-
-    if ( ((well_info >> TEST_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 0
-        reading = (wells + (well_info & 0x1F))->last_opt_reading;
-    else // PAY_LED, bit 5 = 1
-        reading = (wells + (well_info & 0x1F))->last_led_reading;
-
-    // 3 bytes to transfer
-    opt_transfer_bytes(reading, 3);
-}
-
-
+// sends multiple bytes via SPI, by sequentially shifting
+// MSB sent first
 void opt_transfer_bytes (uint32_t data, uint8_t num_bytes){
     // ex. 1 byte to transfer, shift = 0
     // ex. 4 bytes to transfer, shift = 24 -> 16 -> 8 -> 0

@@ -40,6 +40,10 @@
 #define CMD_ENTER_SLEEP_MODE        0x06
 #define CMD_ENTER_NORMAL_MODE       0x07
 
+// number of return bytes
+#define NUM_GET_READING             3
+#define NUM_GET_POWER               3
+
 /* SPI STATUS BITS */
 #define SPI_ERROR_BIT               6
 #define SPI_INVALID_COMMAND_BIT     5           

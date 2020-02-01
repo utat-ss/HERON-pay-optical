@@ -97,9 +97,10 @@ uint32_t read_raw_power(){ // nice name :^)
 
     // voltage on left, current on right
     uint32_t raw_power = raw_voltage;
-    raw_power = raw_power << 16;
+    raw_power = raw_power << 12;
     raw_power = raw_power | raw_current;
 
+    // 8(unused) + 12(2 unused + 10 voltage data) + 12 (2 unused + 10 current data)
     return raw_power;
 }
 
