@@ -1,5 +1,5 @@
-#ifndef __AVR_ATmega8A__ 
-#define __AVR_ATmega8A__
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
 #endif 
 
 #ifndef POWER_H
@@ -8,8 +8,10 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <utilities/utilities.h>
+#include <avr/interrupt.h>
 #include <uart/uart.h>
 #include <i2c/i2c.h>
+#include <spi/spi.h>
 #include "optical.h"
 
 
@@ -42,6 +44,8 @@ void enter_normal_mode();
 float power_read_current();
 float power_read_voltage();
 float power_read_power();
+uint32_t read_raw_power();
+
 float convert_adc_data_to_voltage(uint16_t data, float vref);
 void init_adc();
 uint16_t read_adc_channel(uint8_t channel);

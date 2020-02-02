@@ -28,11 +28,11 @@ TODO - test more thoroughly - modes and clock frequencies
 
 #include <spi/spi.h>
 
-// SPI pins on microcontroller
-#define CLK     PB7
-#define MISO    PB0
-#define MOSI    PB1
-#define SS      PD3
+// SPI pins on microcontroller, pg 91
+#define CLK     PB5
+#define MISO    PB4
+#define MOSI    PB3
+#define SS      PB2
 
 /*
 Initializes a pin as an output pin for a CS line to control a SPI device.
@@ -56,12 +56,22 @@ void set_cs_high(uint8_t pin, port_t port) {
 // Initializes the SPI library (registers and output pins).
 // Before SPI is enabled, PPRSPI must be 0
 void init_spi(void) {
-    // make CLK, MOSI, and SS pins output
-    DDRB |= _BV(CLK) | _BV(MOSI);
-    DDRD |= _BV(SS);
-    // enable SPI, set mode to master, set SCK freq to f_io/64
-    // TODO - can we run SPI faster? check each SPI device's datasheet for max frequency
-    SPCR |= _BV(SPE) | _BV(MSTR) | _BV(SPR1);
+    // disable all interrupts
+    cli();
+
+    // make MISO pin output
+    DDRB |= _BV(MISO);
+    // enable SPI as slave
+    // Do not set SPIE because we don't want to enable interrupts
+    SPCR |= _BV(SPE);
+
+    // enable all interrupts
+    sei();
+
+    // enable interrupt source as well
+    // might need something like:
+    //     SPSR |= (1 << SPIF); // also enable SPI interrupts
+    //     MCUCR |= (1 << SPIPS); // use alternate SPI lines
 }
 
 /*

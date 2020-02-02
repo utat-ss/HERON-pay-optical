@@ -28,10 +28,11 @@
 #define OPT_SENS_LOW_THRES           0.1
 #define OPT_SENS_HIGH_THRES          0.9
 
-/* QUALITY OF LIFE DEFINES */
+
+/* QUALITY OF LIFE DEFINES , -nani?? */
 typedef enum {
-    PAY_OPTICAL = 0,
-    PAY_LED = 1
+    PAY_LED = 0,         // optical density
+    PAY_OPTICAL = 1      // fluorescence
 } pay_board_t;
 
 typedef enum {
@@ -39,10 +40,21 @@ typedef enum {
     LED_OFF = 0
 } led_state_t;
 
-typedef enum {
-    FLUOR_MEAS = 0,
-    OD_MEAS = 1
-} meas_type_t;
+typedef struct {
+    // calibration settings
+    light_sensor_setting_t opt_calib;
+    light_sensor_setting_t led_calib;
+
+    // last set of readings
+    uint32_t last_opt_reading;
+    uint32_t last_led_reading;
+
+    // sensor struct
+    light_sensor_t* sensor;
+} well_t;
+
+/* EXTERNALLY AVAILABLE VARIABLES */
+extern well_t wells[];
 
 /* To be implemented:
 
@@ -54,11 +66,17 @@ uint16_t get_sensor_data(uint8_t pos);
  */
 
 /* FUNCTION PROTOTYPES */
+void init_wells(void);
+void init_well_calibration(well_t* well);
+void read_opt_sensor_test(uint8_t pos);
+void update_well_reading(uint8_t pos, pay_board_t board);
+void write_opt_sensor_calibration(light_sensor_t* light_sens, light_sensor_setting_t setting);
+light_sensor_setting_t read_opt_sensor_calibration(light_sensor_t* light_sens);
 void init_opt_sensors(void);
 uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board);
 void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens);
-// void all_on();
-// void all_off();
+void all_on();
+void all_off();
 void init_all_mux(void);
 void init_all_pex(void);
 void init_pex_output_low(pex_t* pex);

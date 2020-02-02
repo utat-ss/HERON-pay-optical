@@ -4,13 +4,13 @@
 # AVR-GCC compiler
 CC = avr-gcc
 # Compiler flags
-CFLAGS = -Wall -std=gnu99 -Wl,-u,vfprintf -g -mmcu=atmega8a -Os -mcall-prologues
+CFLAGS = -Wall -std=gnu99 -Wl,-u,vfprintf -g -mmcu=atmega328 -Os -mcall-prologues
 # Includes (header files)
 INCLUDES = -I./lib-common-ported/include/
 # Programmer
 PGMR = stk500
 # Microcontroller
-MCU = m8
+MCU = m328
 # Build directory
 DIR = build
 # Program name

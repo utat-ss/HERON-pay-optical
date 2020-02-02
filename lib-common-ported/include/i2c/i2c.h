@@ -1,9 +1,9 @@
-#ifndef __AVR_ATmega8A__ 
-#define __AVR_ATmega8A__
-#endif 
-
 #ifndef I2C_H
 #define I2C_H
+
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
+#endif 
 
 #include <utilities/utilities.h>
 #include <uart/uart.h>

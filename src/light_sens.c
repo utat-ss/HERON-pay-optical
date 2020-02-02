@@ -96,7 +96,10 @@ void get_light_sensor_readings(light_sensor_t* light_sens){
     uint16_t ch0_reading = 0;
     uint16_t ch1_reading = 0;
 
-    while (!(read_light_sense_register(LSENSE_STATUS) & 0x01));
+    uint16_t timeout = UINT16_MAX;
+    while (!(read_light_sense_register(LSENSE_STATUS) & 0x01) && timeout>0){
+        timeout--;
+    }
 
     send_start_i2c();
     send_addr_i2c(LSENSE_ADDRESS, I2C_WRITE);

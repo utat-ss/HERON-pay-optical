@@ -69,6 +69,11 @@ typedef enum {
     LS_600ms =  0b101
 } light_sensor_atime_t;
 
+typedef struct {
+    light_sensor_again_t gain;
+    light_sensor_atime_t time;
+} light_sensor_setting_t;
+
 // TSL2591 device
 typedef struct {
     // 0 == disabled, 1 == enabled

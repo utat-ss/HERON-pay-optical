@@ -10,7 +10,7 @@ EXAMPLES = $(dir $(wildcard examples/*/.))
 # Subfolders in manual_tests folder
 MANUAL_TESTS = $(dir $(wildcard manual_tests/*/.))
 # Microcontroller - "32m1" or "64m1"
-MCU = 8a
+MCU = 328
 # AVR device for avrdude uploading - must be prefixed with "m"
 DEVICE = m$(MCU)
 # Harness testing folder

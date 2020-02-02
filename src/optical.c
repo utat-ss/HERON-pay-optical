@@ -69,6 +69,31 @@ mux_t OPT_MUX4 = {
 /* OPTICAL SENSORS */
 
 light_sensor_t opt_sensors[32];
+well_t wells[32];
+
+/*
+Initialize the global array of wells
+*/
+void init_wells(void){
+    for (uint8_t i = 0; i < 32; i++){
+        (wells + i)->sensor = (opt_sensors + i);
+        init_well_calibration(wells + i);
+    }
+}
+
+/*
+Initialize the well settings
+*/
+void init_well_calibration(well_t* well){
+    light_sensor_setting_t def_settings = {
+        LS_LOW_GAIN,
+        LS_200ms
+    };
+    well->last_led_reading = 0x0000;
+    well->last_opt_reading = 0x0000;
+    well->opt_calib = def_settings;
+    well->led_calib = def_settings;
+}
 
 /*
 Initialize the global array of optical sensors
@@ -96,9 +121,49 @@ void read_opt_sensor_test(uint8_t pos){
 }
 
 /*
+Update the global array of wells with a new reading
+*/
+void update_well_reading(uint8_t pos, pay_board_t board){
+    if (board == PAY_OPTICAL) {
+        write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->opt_calib);
+        (wells + pos)->last_opt_reading = get_opt_sensor_reading(pos, board);
+        (wells + pos)->opt_calib = read_opt_sensor_calibration(opt_sensors + pos);
+    } else {    // PAY_LED
+        write_opt_sensor_calibration((opt_sensors + pos), (wells + pos)->led_calib);
+        (wells + pos)->last_led_reading = get_opt_sensor_reading(pos, board);
+        (wells + pos)->led_calib = read_opt_sensor_calibration(opt_sensors + pos);
+    }
+}
+
+/*
+Update the optical sensor with the given calibration
+*/
+void write_opt_sensor_calibration(light_sensor_t* light_sens, light_sensor_setting_t setting){
+    sleep_light_sensor(light_sens);
+
+    set_light_sensor_again(light_sens);
+    set_light_sensor_atime(light_sens);
+
+    // set_light_sensor_again(setting.gain);
+    // set_light_sensor_atime(setting.time);
+    wake_light_sensor(light_sens);
+}
+
+/*
+Read the current optical sensor settings
+*/
+light_sensor_setting_t read_opt_sensor_calibration(light_sensor_t* light_sens){
+    light_sensor_setting_t ret;
+    ret.gain = light_sens->gain;
+    ret.time = light_sens->time;
+    return ret;
+}
+
+/*
 Return the sensor reading for channel pos of type meas
-bits[25:24] are gain
+bits[23:22] are gain
 bits[18:16] are integration time
+bits[15:0] are the data
 */
 uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board){
     mux_t* mux = NULL;
@@ -114,12 +179,12 @@ uint32_t get_opt_sensor_reading(uint8_t pos, pay_board_t board){
 
     disable_all_mux_channels(mux);      
     set_led(pos, board, LED_OFF);
-
-    // TODO: do something smarter
-    ret = opt_sensors[pos].last_ch0_reading | ((uint32_t)(opt_sensors[pos].time) << 16) | ((uint32_t)(opt_sensors[pos].gain) << 24);
+    ret = opt_sensors[pos].last_ch0_reading | ((uint32_t)(opt_sensors[pos].time) << 16) | ((uint32_t)(opt_sensors[pos].gain) << 22);
 
     return ret;
 }
+
+
 
 /*
 Take readings from the optical sensor and calibrate gain and integration time
@@ -136,7 +201,14 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         calibrated = 1;
     }
 
-    while (!calibrated){
+    /* 'The timeout needs to be shorter here but I don't know what yet,
+    probably around 5 to 10 because each calibration is hundred of ms'
+    - Bruno
+    */
+    uint16_t timeout = UINT16_MAX;
+    while (!calibrated && timeout>0){
+        timeout--;
+
         // put the device to sleep
         sleep_light_sensor(light_sens);
 
@@ -189,8 +261,8 @@ Initialize all the port expanders
 void init_all_pex(void){
     init_pex_output_low(&OPT_PEX1);
     init_pex_output_low(&OPT_PEX2);
-    //init_pex_output_low(&LED_PEX1);
-    //init_pex_output_low(&LED_PEX2);
+    init_pex_output_low(&LED_PEX1);
+    init_pex_output_low(&LED_PEX2);
 }
 
 /*
@@ -203,6 +275,26 @@ void init_pex_output_low(pex_t* pex){
 }
 
 /*
+Turns on all the LEDs
+*/
+void all_on(pay_board_t board){
+    set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&LED_PEX1, PEX_GPIO_A, 0xFFFF);
+    set_pex_bank_pair(&LED_PEX2, PEX_GPIO_A, 0xFFFF);
+}
+
+/*
+Turns off all the LEDs
+*/
+void all_off(pay_board_t board){
+    set_pex_bank_pair(&OPT_PEX1, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&OPT_PEX2, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&LED_PEX1, PEX_GPIO_A, 0);
+    set_pex_bank_pair(&LED_PEX2, PEX_GPIO_A, 0);
+}
+
+/*
 Sets the LED at pos to the desired state
 pos: uint8_t between 0 and 31
 board: either PAY_OPTICAL or PAY_LED
@@ -212,6 +304,16 @@ void set_led(uint8_t pos, pay_board_t board, led_state_t state){
     pex_t* pex = NULL;
 
     get_pex(&pex, pos, board);
+
+    // fudging to correct for hardware layout of PAY-LED
+    if (board == PAY_LED && pos < 16){
+        if (pos < 8){
+            pos += 8;
+        } else {
+            pos -= 8;
+        }
+    }
+
     pos %= 16;  // get the pos less than 16
 
     // read the current GPIO state
@@ -238,6 +340,15 @@ uint8_t get_led(uint8_t pos, pay_board_t board){
 
     get_pex(&pex, pos, board);
 
+    // fudging to correct for hardware layout of PAY-LED
+    if (board == PAY_LED && pos < 16){
+        if (pos < 8){
+            pos += 8;
+        } else {
+            pos -= 8;
+        }
+    }
+
     // read the current GPIO state
     uint16_t gpio_state = get_pex_bank_pair(pex, PEX_GPIO_A);
     uint8_t state = (gpio_state >> (pos % 16)) & 0x01;
@@ -257,10 +368,14 @@ void get_pex(pex_t** pex, uint8_t pos, pay_board_t board){
             *pex = &OPT_PEX2;
         }
     } else {
-        if (pos < 16){
-            *pex = &LED_PEX1;
-        } else {
+        if (pos < 8){
             *pex = &LED_PEX2;
+        } else if (pos < 16){
+            *pex = &LED_PEX1;
+        } else if (pos < 24){
+            *pex = &LED_PEX2;
+        } else {
+            *pex = &LED_PEX1;
         }
     }
 }

@@ -1,4 +1,5 @@
 #include "power.h"
+#include "spi_comms.h"
 
 pin_info_t load_switch_en = {
     .port = &LOAD_SWITCH_PORT,
@@ -20,13 +21,18 @@ Execute all important initializations for the board upon power-up
 */
 void init_board(){
     init_uart();
-    //print("-- UART initialized\n");
+    print("-- UART initialized\n");
     init_power();
-    //print("-- Power module initialized\n");
+    print("-- Power module initialized\n");
     init_i2c();
-    //print("-- I2C initialized\n");
+    print("-- I2C initialized\n");
+    init_spi();
+    print("-- SPI Initialized\n");
     init_board_sensors();
     print("-- Board initialized\n");
+
+    init_spi_comms();
+    print("-- SPI Comms initialized\n");
 }
 
 /*
@@ -34,16 +40,16 @@ Power cycle the board sensors and initialize them
 */
 void init_board_sensors(){
     // Ensure that the sensors have been reset
-    //print("-- Power cycling the sensor ICs\n");
-    disable_sensor_power();
-    enable_sensor_power();
+    print("-- Power cycling the sensor ICs\n");
+    // disable_sensor_power();
+    // enable_sensor_power();
 
     init_all_pex();     // TODO: change to all pex once LED implemented
-    //print("-- Port expanders initialized\n");
+    print("-- Port expanders initialized\n");
     init_all_mux();
-    // print("-- Mux's initialized\n");
+    print("-- Mux's initialized\n");
     init_opt_sensors();
-    //print("-- Light sensors initialized\n");
+    print("-- Light sensors initialized\n");
 }
 
 /*
@@ -81,6 +87,23 @@ void enter_normal_mode(){
     init_board_sensors();
     // do something with the micro
 }
+
+
+// returns raw current and voltage data from ADC, concated in 32 bits
+uint32_t read_raw_power(){ // nice name :^)
+    // 10 bits of data
+    uint16_t raw_current = read_adc_channel(POWER_CURR_CHANNEL);
+    uint16_t raw_voltage = read_adc_channel(POWER_VOLT_CHANNEL);
+
+    // voltage on left, current on right
+    uint32_t raw_power = raw_voltage;
+    raw_power = raw_power << 12;
+    raw_power = raw_power | raw_current;
+
+    // 8(unused) + 12(2 unused + 10 voltage data) + 12 (2 unused + 10 current data)
+    return raw_power;
+}
+
 
 /*
 Return the current consumption of the board in mA
@@ -151,7 +174,12 @@ uint16_t read_adc_channel(uint8_t channel){
     set_adc_channel(channel);
     // enable ADC, single conversion, clear any ADIF flag, keep prescaler bits
     ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADIF) | (ADCSRA & ~ADC_PRESCALER_MASK);
-    while(!(ADCSRA & _BV(ADIF)));
+
+    uint16_t timeout = UINT16_MAX;
+    while(!(ADCSRA & _BV(ADIF)) && timeout > 0){
+        timeout--;
+    }
+
     adc_read |= (uint16_t)(ADCL & 0x00FF);
     adc_read |= (uint16_t)((ADCH << 8) & 0x0300);
     // disable ADC, clear ADIF flag, keep prescaler bits
