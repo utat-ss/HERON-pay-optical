@@ -1,4 +1,4 @@
-#include "../../src/spi_comms.h"
+#include "../../src/optical_spi.h"
 #include "../../src/optical.h"
 #include "../../src/power.h"
 #include <util/delay.h>
@@ -16,7 +16,7 @@ int main(void) {
 		// _delay_ms(500);
         // print("hello world\n");
 
-       opt_loop();
+       opt_loop_main();
 	}
 
 	return 0;

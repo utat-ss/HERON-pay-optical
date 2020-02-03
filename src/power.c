@@ -1,5 +1,5 @@
 #include "power.h"
-#include "spi_comms.h"
+#include "optical_spi.h"
 
 pin_info_t load_switch_en = {
     .port = &LOAD_SWITCH_PORT,
@@ -31,7 +31,7 @@ void init_board(){
     init_board_sensors();
     print("-- Board initialized\n");
 
-    init_spi_comms();
+    init_opt_spi();
     print("-- SPI Comms initialized\n");
 }
 
@@ -44,7 +44,7 @@ void init_board_sensors(){
     // disable_sensor_power();
     // enable_sensor_power();
 
-    init_all_pex();     // TODO: change to all pex once LED implemented
+    init_all_pex();
     print("-- Port expanders initialized\n");
     init_all_mux();
     print("-- Mux's initialized\n");
@@ -72,11 +72,10 @@ void enable_sensor_power(){
 
 /*
 Puts the optical board into sleep mode
-TODO: implement sleep mode on the micro
+Not implementing implement sleep mode on the micro
 */
 void enter_sleep_mode(){
     disable_sensor_power();
-    // TODO: do something with the micro
 }
 
 /*
@@ -85,7 +84,6 @@ Takes the optical board out of sleep mode
 void enter_normal_mode(){
     enable_sensor_power();
     init_board_sensors();
-    // do something with the micro
 }
 
 
@@ -96,9 +94,7 @@ uint32_t read_raw_power(){ // nice name :^)
     uint16_t raw_voltage = read_adc_channel(POWER_VOLT_CHANNEL);
 
     // voltage on left, current on right
-    uint32_t raw_power = raw_voltage;
-    raw_power = raw_power << 12;
-    raw_power = raw_power | raw_current;
+    uint32_t raw_power = ((uint32_t) raw_voltage << 12) | ((uint32_t) raw_current);
 
     // 8(unused) + 12(2 unused + 10 voltage data) + 12 (2 unused + 10 current data)
     return raw_power;
@@ -166,7 +162,7 @@ void init_adc(){
 
 /*
 Read the selected adc channel
-TODO: Consider using with ADC noise reduction mode
+Not using ADC noise reduction mode
 */
 uint16_t read_adc_channel(uint8_t channel){
     uint16_t adc_read = 0x0000;

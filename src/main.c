@@ -17,12 +17,12 @@ button to work.
 #include <utilities/utilities.h>
 
 #include "power.h"
-#include "spi_comms.h"
+#include "optical_spi.h"
 
 int main(void) {
     init_board();
-
+    // TODO - implement watchdog
     while(1){
-        opt_loop();
+        opt_loop_main();
     }
 }

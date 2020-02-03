@@ -89,8 +89,6 @@ all: $(SRC)
 
 # Echo the text of the command to print out what we're doing before actually
 # executing the command (can't echo an individual command in a for loop)
-# TODO - calling make in a subdirectory seems to not pass the `clean` argument -
-#	find a fix for this
 clean:
 	rm -f lib/*.a
 	@for dir in $(BUILD) ; do \
@@ -136,7 +134,6 @@ debug:
 	@echo ------------
 
 # For each example, clean directory then build
-# TODO - call `make clean` within each subdirectory
 examples:
 	@for dir in $(EXAMPLES) ; do \
 		cd $$dir ; \
@@ -163,7 +160,6 @@ help:
 	@echo "read-eeprom    read and display the contents of the microcontroller's EEPROM"
 
 # For each example, clean directory then build
-# TODO - call `make clean` within each subdirectory
 manual_tests:
 	@for dir in $(MANUAL_TESTS) ; do \
 		cd $$dir ; \
