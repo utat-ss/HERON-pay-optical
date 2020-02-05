@@ -22,8 +22,6 @@ Mode    CPOL    CPHA
 Clock speed:
 
 The default is F_osc / 64. This is expected when code calls send_spi() without changing the clock speed. If a device uses a different frequency, it must change the frequency, send its messages(s), then change the frequency back immediately after.
-
-TODO - test more thoroughly - modes and clock frequencies
 */
 
 #include <spi/spi.h>

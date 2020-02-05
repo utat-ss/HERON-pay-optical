@@ -1,25 +1,46 @@
-// #ifndef OPTICAL_SPI_H
-// #define OPTICAL_SPI_H
+#ifndef __AVR_ATmega328__ 
+#define __AVR_ATmega328__
+#endif 
 
-// #include <stdbool.h>
-// #include <spi/spi.h>
+#ifndef SPI_COMMS_H
+#define SPI_COMMS_H
 
-// // DATA_RDY pin - goes to PAY-SSM to tell it that optical data is ready
+#include <spi/spi.h>
+#include <uart/uart.h>
+#include <utilities/utilities.h>
+#include <stdint.h>
+#include "optical.h"
+#include "power.h"
 
-// // I think the pin and port numbers need to change, but not sure were to look on the ATmega32a datasheet
-// #define DATA_RDY_PIN    PD0
-// #define DATA_RDY_PORT   PORTD
-// #define DATA_RDY_DDR    DDRD
 
-// // Alternate MISO line
-// #define MISO_A_PIN      PD2
-// #define MISO_A_PORT     PORTD
-// #define MISO_A_DDR      DDRD
+// output DATA_RDYn pin (active low)
+#define DATA_RDYn       PD7
+#define DATA_RDYn_PORT  PORTD
+#define DATA_RDYn_DDR   DDRD
+#define DATA_RDYn_PIN   PIND
 
-// #define SPI_INTERRUPT_ENABLE    SPIE
 
-// extern bool opt_spi_use_dummy_data;
+/* SPI OPCODES */
+#define CMD_GET_READING             0x01    // 1 cmd byte, followed by 1 byte of well_data
+#define CMD_GET_POWER               0x02
+#define CMD_ENTER_SLEEP_MODE        0x03
+#define CMD_ENTER_NORMAL_MODE       0x04
 
-// void opt_spi_init(void);
+// test type and field (well) number bits
+#define OPT_TYPE_BIT        5
+#define FIELD_NUMBER_BIT    4
 
-// #endif
+// number of return bytes
+#define SPI_TX_COUNT 3
+
+
+void init_opt_spi(void);
+void opt_set_data_rdy_low();
+void opt_set_data_rdy_high();
+void opt_loop_main(void);
+
+void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte);
+void opt_update_reading(uint8_t well_info);
+void opt_transfer_bytes (uint32_t data);
+
+#endif // SPI_COMMS_H

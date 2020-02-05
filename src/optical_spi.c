@@ -1,157 +1,143 @@
-// /*
-// Optical SPI
+/*
+    PROTOCOL: to be written
+    (see pay > src > optical.c for details)
+*/
 
-// This microcontroller (PAY-Optical) functions as a SPI slave. The PAY microcontroller functions as the SPI master.
+#include "optical_spi.h"
 
-// SPI Protocol with PAY:
-// When PAY sends a request to PAY-Optical to request reading of a sensor,
-// PAY will send a byte over SPI: {2'b11, field_number} (2 bits of 1's, followed by 6 bits of the channel number)
-// field_number - a number from 0 to 35 (well number)
-// This is followed by 3 transactions for the 3 bytes of data.
+// Initialize SPI comms as SPI slave, with interrupts enabled
+void init_opt_spi(void){
+    // initialize SPI
+    init_spi();
 
-// There is a total of 4 SPI communications that happen in an exchange:
-// 1. SSM requests data from a specific channel on optical
-// 2. Optical transfers back the first byte of data
-// 3. Optical transfers back the second byte of data
-// 4. Optical transfers back the third byte of data
+    // set DATA_RDYn pin as output high
+    DATA_RDYn_DDR |= _BV(DATA_RDYn);    // set direction = output
+    opt_set_data_rdy_high();
+}
 
-// The interrupt on optical gets triggered on each of these.
-// Optical sets the DATA_RDY (data ready) pin high between transfers 1 and 2 to tell SSM it has the data ready
-// (synchronization between optical and ssm).
-// */
+// set DATA_RDYn low
+void opt_set_data_rdy_low(){
+    DATA_RDYn_PORT &= ~_BV(DATA_RDYn);     // set output LOW
+}
 
-// #include "optical_spi.h"
-
-// // For testing, set this to true to use dummy SPI data as an example instead of
-// // reading the optical ADC
-// bool opt_spi_use_dummy_data = false;
-
-// // true if we are currently in the progress of sending data over SPI to PAY
-// bool spi_in_progress = false;
-// // 24-bit optical data we are currently sending
-// uint32_t spi_data = 0;
-// // Number of bytes already received by PAY
-// uint8_t spi_num_bytes_done = 0;
-
-// // A2 pairs up with A4
-// uint8_t A2_channels[] = {4, 1, 2, 3, 6, 8, 5, 7};
-// uint8_t A4_channels[] = {2, 3, 1, 4, 6, 8, 7, 5};
-// // A1 pairs up with A3
-// uint8_t A1_channels[] = {3, 2, 1, 4, 6, 8, 7, 5};
-// uint8_t A3_channels[] = {1, 4, 2, 3, 6, 8, 7, 5};
-
-// uint8_t *channels[] = {A1_channels, A2_channels, A3_channels, A4_channels};
-
-// // Interrupts - see datasheet section 8
-// // SPI - see datasheet pg.133-...
+// set DATA_RDYn high
+void opt_set_data_rdy_high(){
+    DATA_RDYn_PORT |= _BV(DATA_RDYn);  // set output HIGH
+}
 
 
-// /*
-// Initializes the microcontroller to function as a SPI slave.
-// DO NOT INITIALIZE UART - it interferes with the SPI slave functionality
-// */
-// void opt_spi_init(void) {
-//     // Set MISO and DATA_READY output, all others input
-//     // Using generic pins, not CS pins
-//     init_cs(MISO_A_PIN, &MISO_A_DDR);
-//     set_cs_low(MISO_A_PIN, &MISO_A_PORT);
-//     init_cs(DATA_RDY_PIN, &DATA_RDY_DDR);
-//     set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);
+// to be put in infinite loop in main
+void opt_loop_main(void){
+    // if SPI transfer if completed
+    if (SPSR & _BV(SPIF)){
+        // SPI data from PAY-SSM
+        uint8_t rx_bytes[2] = {0x00};
+        rx_bytes[0] = SPDR;
 
-//     /*
-//      * Enable SPI, set SPI control register
-//      * SPE: SPI0 enable
-//      * SPIE: SPI0 interrupt enable
-//      * SPR1: set SCK frequency
-//      */
-//     SPCR = (1 << SPE) | (1 << SPIE) | (1 << SPR1);
+        // wait until another SPI transfer is completed
+        // --> aka wait until SPIF is no longer high 
+        uint32_t timeout = 1000;
+        while (!(SPSR & _BV(SPIF)) && timeout>0){
+            timeout--;
+            _delay_ms(1);
+        }
+        if (timeout == 0) {
+            print("TIMEOUT RX second byte\n");
+        }
+        rx_bytes[1] = SPDR;
 
-//     sei(); // enable global interrupts
-//     SPSR |= (1 << SPIF); // also enable SPI interrupts
-//     MCUCR |= (1 << SPIPS); // use alternate SPI lines
-// }
+        print("SPI RX: ");
+        print_bytes(rx_bytes, 2);
+
+        // now, got both bytes
+        // perform the requested command and send back data if necessary
+        manage_cmd(rx_bytes[0], rx_bytes[1]);
+    }
+    opt_set_data_rdy_high();
+}
 
 
-// // This interrupt is triggered just after PAY pulls PAY-Optical's CS pin low and transfers a byte of data
-// ISR(SPI_STC_vect) {
-//     // Get the received data from PAY from the SPI data register
-//     uint8_t received = SPDR;
-//     // Set the outgoing data to 0 by default
-//     SPDR = 0x00;
+// depending on cmd_code, does appropriate requested function + return data (if needed)
+void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
+    // if first byte is get_reading, then 2nd byte is well info
+    if (spi_first_byte == CMD_GET_READING){
+        print("Get reading\n");
 
-//     // If we are currently in the process of transmitting SPI data,
-//     // i.e. already received the request for data but haven't sent all the bytes yet
-//     if (spi_in_progress) {
-//         spi_num_bytes_done++;
+        // spi_second_byte contains well_info
+        opt_update_reading(spi_second_byte);    // performs reading (3 bytes), stores it in wells[32] of well_t
+        
+        // fetch reading from registers
 
-//         /*
-//         Check how many bytes we have sent so far.
-//         If 1 or 2, we're not done yet so load the next byte into the SPI data register.
-//             Also pulse the DATA_RDY pin (need to set low before setting high so PAY receives the interrupt).
-//         If 3, we're done so stop sending data.
-//         */
-//         switch (spi_num_bytes_done) {
-//             case 1:
-//             	set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);
-//                 SPDR = (spi_data >> 8) & 0xFF;
-//                 set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
-//                 break;
-//             case 2:
-//             	set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);
-//                 SPDR = spi_data & 0xFF;
-//                 set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
-//                 break;
-//             case 3:
-//             	set_cs_low(DATA_RDY_PIN, &DATA_RDY_PORT);
-//                 spi_in_progress = false;
-//                 spi_data = 0;
-//                 spi_num_bytes_done = 0;
-//                 break;
-//             default:
-//             	// do nothing, although this is unexpected
-//                 break;
-//         }
-//     }
+        uint32_t reading = 0;  
+        if ( ((spi_second_byte >> OPT_TYPE_BIT) & 0x1) == PAY_OPTICAL)    // bit 5 = 1
+            reading = (wells + (spi_second_byte & 0x1F))->last_opt_reading;
+        else // PAY_LED, bit 5 = 1
+            reading = (wells + (spi_second_byte & 0x1F))->last_led_reading;
+        
+        opt_transfer_bytes(reading);       // shifts reading data into SPDR over 3 SPI transmissions
+    }
 
-//     // If we are not currently in the process of transmitting SPI data
-//     else {
-//         // Check if we received a request for data (the first 2 bits are 1's)
-//         if (((received >> 6) & 0b11) == 0b11) {
-//             uint8_t field_number = received & 0x3F;
+    // get power
+    else if (spi_first_byte == CMD_GET_POWER){
+        print("Get power\n");
+        uint32_t data = read_raw_power();
+        opt_transfer_bytes(data);
+    }
 
-//             // Setup to start sending data over SPI
-//             spi_in_progress = true;
-//             spi_num_bytes_done = 0;
+    else if (spi_first_byte == CMD_ENTER_SLEEP_MODE) {
+        print("Sleep mode\n");
+        enter_sleep_mode();
+        opt_transfer_bytes(0);
+    }
 
-//             // Get the 24 bits of optical ADC data to send
-//             if (opt_spi_use_dummy_data) {
-//                 // This is for testing SPI comms
-//                 // Encode the field number in the last byte for reference
-//                 spi_data = 0xdb6d00 | field_number;
-//             } else {
-//                 // set SPI transfer lines to MISO_A and MISO_B (set to 0)
-//                 MCUCR &= ~(1<<SPIPS);
+    else if (spi_first_byte == CMD_ENTER_NORMAL_MODE) {
+        print("Normal mode\n");
+        enter_normal_mode();
+        opt_transfer_bytes(0);
+    }
 
-//                 // set optical to Master
-//                 SPCR |= (1<<MSTR);
+    // else invalid command
+}
 
-//                 // This is for getting actual optical ADC data
-//                 opt_adc_init();
-//                 opt_adc_init_sync(field_number/8);
-//                 opt_adc_enable_mux(channels[field_number/8][field_number%8]);
-//                 spi_data = opt_adc_read_sync();
 
-//                 // set SPI transfer lines back to normal lines,
-//                 MCUCR |= (1<<SPIPS);
+// calibrate and take well readings
+// well_data[5] - optical density = 0, fluorescent LED = 1
+// well_data[4:0] - well number (0-31)
+void opt_update_reading(uint8_t well_info){
+    update_well_reading((well_info & 0x1F), (well_info >> OPT_TYPE_BIT) & 0x1);
+}
 
-//                 // set optical to Slave, so SSM can read
-//                 SPCR &= ~(1<<MSTR);
-//             }
+// sends multiple bytes via SPI, by sequentially shifting
+// MSB sent first
+void opt_transfer_bytes(uint32_t data){
+    uint8_t tx_bytes[SPI_TX_COUNT] = {0x00};
+    for (uint8_t i = 0; i < SPI_TX_COUNT; i++) {
+        uint8_t shift = (SPI_TX_COUNT - 1 - i) * 8;
+        tx_bytes[i] = (data >> shift) & 0xFF;
+    }
 
-//             // Load the first byte into the data register
-//             SPDR = (spi_data >> 16) & 0xFF;
-//             // Set DATA_RDY high
-//             set_cs_high(DATA_RDY_PIN, &DATA_RDY_PORT);
-//         }
-//     }
-// }
+    print("SPI TX: ");
+    print_bytes(tx_bytes, SPI_TX_COUNT);
+
+    for (uint8_t i = 0; i < SPI_TX_COUNT; i++) {
+        // load the next byte of data, ready for SPI transmission out
+        SPDR = tx_bytes[i];
+        opt_set_data_rdy_low();     // signal to PAY to initiate SPI transfer
+
+        // wait until SPI transfer is complete
+        uint32_t timeout = 1000;
+        while (!(SPSR & _BV(SPIF)) && timeout > 0){
+            timeout--;
+            _delay_ms(1);
+        }
+        if (timeout == 0) {
+            print("TIMEOUT in opt_transfer_bytes\n");
+        }
+        // Must read SPDR to clear SPIF bit or else optical will think it has
+        // received another SPI transfer
+        uint8_t dummy_byte __attribute__((unused)); // Silence unused variable warning
+        dummy_byte = SPDR;
+    }
+
+    opt_set_data_rdy_high();
+}

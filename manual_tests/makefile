@@ -47,7 +47,6 @@ ifeq ($(MAC_OS), true)
 endif
 ifeq ($(LINUX), true)
 	# lower number
-	# TODO - test this
 	PORT = $(shell find /dev -name 'ttyS[0-9]*' | sort | head -n1)
 endif
 
