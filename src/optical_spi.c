@@ -79,18 +79,21 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte){
 
     // get power
     else if (spi_first_byte == CMD_GET_POWER){
+        print("Get power\n");
         uint32_t data = read_raw_power();
         opt_transfer_bytes(data);
     }
 
     else if (spi_first_byte == CMD_ENTER_SLEEP_MODE) {
+        print("Sleep mode\n");
         enter_sleep_mode();
-        opt_transfer_bytes(0x00);
+        opt_transfer_bytes(0);
     }
 
     else if (spi_first_byte == CMD_ENTER_NORMAL_MODE) {
+        print("Normal mode\n");
         enter_normal_mode();
-        opt_transfer_bytes(0x00);
+        opt_transfer_bytes(0);
     }
 
     // else invalid command

@@ -156,7 +156,7 @@ float convert_adc_data_to_voltage(uint16_t data, float vref){
 Initialize the ADC with default vref and prescaler
 */
 void init_adc(){
-    set_adc_vref(ADC_DEF_VREF);
+    set_adc_vref(ADC_DEF_VREF_BITS);
     set_adc_prescaler(ADC_DEF_PRESCALER);
 }
 
