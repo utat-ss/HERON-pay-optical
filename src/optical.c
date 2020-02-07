@@ -1,5 +1,8 @@
 #include "optical.h"
 
+// Uncomment for extra print statements
+#define OPTICAL_DEBUG
+
 /* PORT EXPANDER OBJECTS */
 pex_t OPT_PEX1 = {
     .addr = OPTICAL_PEX1_ADDR,
@@ -201,14 +204,9 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         calibrated = 1;
     }
 
-    /* 'The timeout needs to be shorter here but I don't know what yet,
-    probably around 5 to 10 because each calibration is hundred of ms'
-    - Bruno
-    */
-    uint16_t timeout = UINT16_MAX;
-    while (!calibrated && timeout>0){
-        timeout--;
-
+    // This should take a maximum of around 8.4s
+    uint8_t i = 0;
+    for (i = 0; i < OPT_MAX_CALIB_COUNT && !calibrated; i++){
         // put the device to sleep
         sleep_light_sensor(light_sens);
 
@@ -217,12 +215,12 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
                 light_sens->time += 1;                  // move to higher integration time
             } else if (light_sens->gain != LS_MAX_GAIN){
                 light_sens->gain += 1;
-                light_sens->time = LS_200ms;
+                light_sens->time = LS_100ms;
             } else {
                 calibrated = 1;                      // nothing we can do, measurement undersaturated
             }
         } else if (last_reading > OPT_SENS_HIGH_THRES){
-            if (light_sens->time != LS_200ms){
+            if (light_sens->time != LS_100ms){
                 light_sens->time -= 1;                  // move to lower integration time
             } else if (light_sens->gain != LS_LOW_GAIN){
                 light_sens->gain -= 1;                  
@@ -242,6 +240,16 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         get_light_sensor_readings(light_sens);
         last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
     }
+
+    if (i >= OPT_MAX_CALIB_COUNT) {
+        print("CALIBRATION TIMEOUT\n");
+    }
+
+#ifdef OPTICAL_DEBUG
+    print("Calibration count: %u\n", i);
+    print("gain = 0x%x, time = 0x%x\n", light_sens->gain, light_sens->time);
+#endif
+
     // calling function should pull the last sensor value from light_sens
 }
 
