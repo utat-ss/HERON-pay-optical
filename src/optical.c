@@ -1,7 +1,7 @@
 #include "optical.h"
 
-// Uncomment for extra print statements
-#define OPTICAL_DEBUG
+// Extra print statements
+bool print_cal_info = true;
 
 /* PORT EXPANDER OBJECTS */
 pex_t OPT_PEX1 = {
@@ -241,14 +241,14 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
     }
 
-    if (i >= OPT_MAX_CALIB_COUNT) {
-        print("CALIBRATION TIMEOUT\n");
-    }
+    if (print_cal_info) {
+        if (i >= OPT_MAX_CALIB_COUNT) {
+            print("CALIBRATION TIMEOUT\n");
+        }
 
-#ifdef OPTICAL_DEBUG
-    print("Calibration count: %u\n", i);
-    print("gain = 0x%x, time = 0x%x\n", light_sens->gain, light_sens->time);
-#endif
+        print("Calibration count: %u\n", i);
+        print("gain = 0x%x, time = 0x%x\n", light_sens->gain, light_sens->time);
+    }
 
     // calling function should pull the last sensor value from light_sens
 }

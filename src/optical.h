@@ -1,6 +1,7 @@
 #ifndef OPTICAL_H
 #define OPTICAL_H
 
+#include <stdbool.h>
 #include <pex/pex.h>
 #include <stdint.h>
 #include <uart/uart.h>
