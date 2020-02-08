@@ -239,6 +239,9 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
 
         get_light_sensor_readings(light_sens);
         last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
+
+        // print("i = %u, gain = 0x%x, time = 0x%x, reading = 0x%x\n",
+        //     i, light_sens->gain, light_sens->time, light_sens->last_ch0_reading);
     }
 
     if (print_cal_info) {
@@ -246,8 +249,9 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
             print("CALIBRATION TIMEOUT\n");
         }
 
-        print("Calibration count: %u\n", i);
-        print("gain = 0x%x, time = 0x%x\n", light_sens->gain, light_sens->time);
+        print("Calibration: ");
+        print("count = %u, gain = 0x%x, time = 0x%x\n",
+            i, light_sens->gain, light_sens->time);
     }
 
     // calling function should pull the last sensor value from light_sens

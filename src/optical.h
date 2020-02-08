@@ -30,10 +30,12 @@
 #define OPT_SENS_HIGH_THRES          0.9
 
 // Maximum number of times to run the calibration algorithm
-#define OPT_MAX_CALIB_COUNT 20
+// Should be 20, but add one because running it 20 times is valid, 21 would be
+// a timeout
+#define OPT_MAX_CALIB_COUNT 21
 
 
-/* QUALITY OF LIFE DEFINES , -nani?? */
+/* QUALITY OF LIFE DEFINES */
 typedef enum {
     PAY_LED = 0,         // optical density
     PAY_OPTICAL = 1      // fluorescence
@@ -58,16 +60,10 @@ typedef struct {
 } well_t;
 
 /* EXTERNALLY AVAILABLE VARIABLES */
+extern bool print_cal_info;
 extern well_t wells[];
 
-/* To be implemented:
 
-void enter_low_power(void);
-void exit_low_power(void)
-uint32_t get_power_info(void);
-uint16_t get_sensor_data(uint8_t pos);
-
- */
 
 /* FUNCTION PROTOTYPES */
 void init_wells(void);
