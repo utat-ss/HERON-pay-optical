@@ -2,8 +2,8 @@
 #define __AVR_ATmega328__
 #endif 
 
-#ifndef SPI_COMMS_H
-#define SPI_COMMS_H
+#ifndef OPTICAL_SPI_H
+#define OPTICAL_SPI_H
 
 #include <spi/spi.h>
 #include <uart/uart.h>
@@ -43,4 +43,4 @@ void manage_cmd (uint8_t spi_first_byte, uint8_t spi_second_byte);
 void opt_update_reading(uint8_t well_info);
 void opt_transfer_bytes (uint32_t data);
 
-#endif // SPI_COMMS_H
+#endif // OPTICAL_SPI_H

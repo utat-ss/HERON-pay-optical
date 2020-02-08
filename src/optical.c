@@ -1,5 +1,8 @@
 #include "optical.h"
 
+// Extra print statements
+bool print_cal_info = true;
+
 /* PORT EXPANDER OBJECTS */
 pex_t OPT_PEX1 = {
     .addr = OPTICAL_PEX1_ADDR,
@@ -201,14 +204,9 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
         calibrated = 1;
     }
 
-    /* 'The timeout needs to be shorter here but I don't know what yet,
-    probably around 5 to 10 because each calibration is hundred of ms'
-    - Bruno
-    */
-    uint16_t timeout = UINT16_MAX;
-    while (!calibrated && timeout>0){
-        timeout--;
-
+    // This should take a maximum of around 8.4s
+    uint8_t i = 0;
+    for (i = 0; i < OPT_MAX_CALIB_COUNT && !calibrated; i++){
         // put the device to sleep
         sleep_light_sensor(light_sens);
 
@@ -241,7 +239,21 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
 
         get_light_sensor_readings(light_sens);
         last_reading = (float)(light_sens->last_ch0_reading) / (float)(1UL << 16);
+
+        // print("i = %u, gain = 0x%x, time = 0x%x, reading = 0x%x\n",
+        //     i, light_sens->gain, light_sens->time, light_sens->last_ch0_reading);
     }
+
+    if (print_cal_info) {
+        if (i >= OPT_MAX_CALIB_COUNT) {
+            print("CALIBRATION TIMEOUT\n");
+        }
+
+        print("Calibration: ");
+        print("count = %u, gain = 0x%x, time = 0x%x\n",
+            i, light_sens->gain, light_sens->time);
+    }
+
     // calling function should pull the last sensor value from light_sens
 }
 
