@@ -1,7 +1,7 @@
 #include "optical.h"
 
 // Extra print statements
-bool print_cal_info = true;
+bool print_cal_info = false;
 
 /* PORT EXPANDER OBJECTS */
 pex_t OPT_PEX1 = {
@@ -143,6 +143,9 @@ Update the optical sensor with the given calibration
 */
 void write_opt_sensor_calibration(light_sensor_t* light_sens, light_sensor_setting_t setting){
     sleep_light_sensor(light_sens);
+
+    light_sens->gain = setting.gain;
+    light_sens->time = setting.time;
 
     set_light_sensor_again(light_sens);
     set_light_sensor_atime(light_sens);
