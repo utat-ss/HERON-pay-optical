@@ -215,12 +215,12 @@ void calibrate_opt_sensor_sensitivity(light_sensor_t* light_sens){
                 light_sens->time += 1;                  // move to higher integration time
             } else if (light_sens->gain != LS_MAX_GAIN){
                 light_sens->gain += 1;
-                light_sens->time = LS_100ms;
+                light_sens->time = LS_200ms;
             } else {
                 calibrated = 1;                      // nothing we can do, measurement undersaturated
             }
         } else if (last_reading > OPT_SENS_HIGH_THRES){
-            if (light_sens->time != LS_100ms){
+            if (light_sens->time != LS_200ms){
                 light_sens->time -= 1;                  // move to lower integration time
             } else if (light_sens->gain != LS_LOW_GAIN){
                 light_sens->gain -= 1;                  

@@ -30,7 +30,7 @@
 #define OPT_SENS_HIGH_THRES          0.9
 
 // Maximum number of times to run the calibration algorithm
-#define OPT_MAX_CALIB_COUNT 24
+#define OPT_MAX_CALIB_COUNT 20
 
 
 /* QUALITY OF LIFE DEFINES , -nani?? */
