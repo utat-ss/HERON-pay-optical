@@ -21,7 +21,6 @@ button to work.
 
 int main(void) {
     init_board();
-    // TODO - implement watchdog
     while(1){
         opt_loop_main();
     }
